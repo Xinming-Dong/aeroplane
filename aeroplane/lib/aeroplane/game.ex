@@ -1,4 +1,3 @@
 defmodule Aeroplane.Game do
-  def new do
-    %{
-      rolls: %{:r => []
+  # do nothing
+end
