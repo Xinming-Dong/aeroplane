@@ -1,3 +1,13 @@
 defmodule Aeroplane.Game do
-  # do nothing
+  def new do
+    %{
+      # nothing
+    }
+  end
+  
+  def client_view(game) do
+    %{
+      pieces_loc: [],
+    }
+  end
 end

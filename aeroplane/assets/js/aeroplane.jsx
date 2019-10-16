@@ -4,21 +4,25 @@ import { Stage, Layer, Circle } from 'react-konva';
 import _ from "lodash";
 // import { ImageBackground } from 'react-native';
 
-export default function aeroplane_init(root) {
-  ReactDOM.render(<Aeroplane />, root);
+export default function aeroplane_init(root, channel) {
+  ReactDOM.render(<Aeroplane channel={channel} />, root);
 }
+
+// w&h: width and height of canvas
+// r: radius of pieces
+let W = 1024;
+let H = 768;
+let R = 15;
 
 class Aeroplane extends React.Component {
   constructor(props) {
     super(props);
 
-    // this.channel = props.channel;
+    this.channel = props.channel;
     this.state = {
-      // yellow, blue, red, green
-      pieces_loc: [{x: 100, y: 700},]
+      // a list of pieces locations with order: yellow, blue, red, green
+      pieces_loc: [{x: 203, y: 165},{x: 265, y: 230},],
     };
-
-    let R = 5;
 
     // this.channel
     //     .join()
@@ -26,27 +30,49 @@ class Aeroplane extends React.Component {
     //     .receive("error", resp => { console.log("Unable to join", resp); });
   }
 
+  got_view(view) {
+    console.log("new view", view);
+    this.setState(view.game);
+  }
+
   move(pp) {
-    let pieces = _.map(this.state.pieces_loc, (piec, ii) =>
-      (ii == pp ? _.assign({}, piec, {x: piec.x + 10, y: piec.y + 10}) : piec));
-    this.setState(_.assign({}, this.state, {pieces}));
+    console.log("move");
+    console.log(pp);
+    console.log(this.state.pieces_loc);
+    let pieces = _.map(this.state.pieces_loc, (piec, ii) => {
+      if(ii == pp) {
+        console.log("equal");
+        console.log(ii);
+        console.log(pp);
+        let result = _.assign({}, piec, {x: 600, y: 100});
+        return result;
+      }
+      return piec;
+    });
+    console.log(pieces);
+    this.setState({pieces}, () => {
+      console.log("got view check");});
+  }
+
+  on_move(ii) {
+    console.log("on_move");
+    this.move(ii);
+    // this.channel.push("move", {index: ii})
+    //             .recieve("ok", this.got_view.bind(this));
   }
 
   render() {
-    // let bg = require('/Users/elephant/web-dev-git/aero-img/plain-board.jpg');
-    // let imageFilePath = '/Users/elephant/web-dev-git/aero-img/plain-board.jpg';
     let pieces = _.map(this.state.pieces_loc, (pp, ii) =>
-      <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill="yellow"
-              onClick={() => this.move(ii)} />);
+      <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill="orange" onClick={() => this.on_move(ii)}/>);
       
     return(
         <div className="background">
-          <Stage>
+          <div><p>here we go!</p></div>
+          <Stage width={W} height={H}>
             <Layer>
               {pieces}
             </Layer>
           </Stage>
-          <div><p>here we go!</p></div>
         </div>
     );
   }
