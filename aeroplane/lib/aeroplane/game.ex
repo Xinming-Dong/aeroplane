@@ -1,42 +1,42 @@
 defmodule Aeroplane.Game do
-<<<<<<< HEAD
   def new do
     %{
       board: board_init,
-      pieceLocation: %{:r => [], :b => [], :y => [], :g => []},
-      last2Moved: %{:r => [], :b => [], :y => [], :g =>[]},
-      last2Roll: %{:r => [], :b => [], :y => [], :g =>[]},
-      player: [:r, :b, :y, :g],
-      currPlayer: :r,
+      pieceLocation: %{:r => [10, 11, 12, 13], :b => [5, 6, 7, 8], 
+                       :y => [0, 1, 2, 3], :g => [15, 16, 17, 18]},
+      last2Moved: %{:r => [-1, -1], :b => [-1, -1], :y => [-1, -1], :g =>[-1, -1]},
+      last2Roll: %{:r => [-1, -1], :b => [-1, -1], :y => [-1, -1], :g =>[-1, -1]},
+      player: [y: 0, b: 1, r: 2, g: 3],
+      currPlayer: :y,
       nextPlayer: 0,
       currDie: 6,
-      moveablePieces: [], 
+      moveablePieces: [],
      }
   end
 
 
+  # TODO
   def client_view(game) do
     %{
       currDie: game.currDie,
     }
   end 
 
+  ##################clickDie########################
+  def clickDie(game) do
+    newDieNum = randomDieNum;
+    game
+    |>Map.put(:currDie, newDieNum)
+    |>handleNextPlayer(newDieNum)
+    |>changeMoveablePiece(newDieNum)
+    |>changeLastRollList(newDieNum)
+  end
+
   def randomDieNum do
    :rand.uniform(6) 
   end
 
-  # change to next player in player list. 
-  # TODO: player number is currently hardcoded
-  def switchPlayer(game) do
-    next = rem(Enum.find_index(game.player, 
-      fn(x) -> x == game.currPlayer end) + 1, 4)
-    Enum.at(game.player, next)
-  end
-
-
-
-
-  #change nextPlayer
+  #change next Player
   def handleNextPlayer(game,roll) do
     if roll == 6 do
       game|>Map.put(:nextPlayer, game.currPlayer)
@@ -45,14 +45,36 @@ defmodule Aeroplane.Game do
     end
   end 
 
+
+  # change to next player in player list. 
+  # TODO: player number is currently hardcoded
+  def switchPlayer(game) do
+    next = rem(game.player[game.currPlayer] + 1, 4)
+    game.player|>Enum.find(fn {k, v} -> v == next end)|>elem(0)
+  end
+
+
+
+  #add current roll to the front of the list
   def changeLastRollList(game,roll) do
     [last1 | last2] = game.last2Roll[game.currPlayer]
     newLastRolls = [roll | last1]
-    game|>Map.put(:next2Roll, %{game.last2Roll | game.currPlayer => newLastRolls})
+    game|>Map.put(:last2Roll, game.last2Roll|>Map.put(game.currPlayer,newLastRolls))
   end
 
+
+
   #move back given player's given pieces to the player's camp
-  def moveBack(player, pieces) do
+  def moveBack(game) do
+    campbase = game.palyer[game.currPlayer] * 5
+    currLocation = game.pieceLocation[game.currPlayer]
+                   |> Enum.with_index()
+                   |> Enum.map(fn {pos, pieceID} -> 
+                     (if Enum.member?(game.last2Moved[game.currPlayer], pieceID) do
+                       campbase + pieceID
+                     else
+                       pos
+                     end) end)
   end
 
 
@@ -63,29 +85,68 @@ defmodule Aeroplane.Game do
     [last1 | last2] = game.last2Roll[game.currPlayer]
     cond do
       last1 == 6 && last2 == 6 && roll == 6 ->
-      moveBack(game.currPlayer, game.last2Moved[game.currPlayer])
+        moveBack(game)
+        Map.put(game, :moveablePieces, [game.currPlayer])
+      last2 != 6 && roll == 6 ->
+        Map.put(game, :moveablePieces, [game.currPlayer, 0, 1, 2, 3])
+      roll != 6 ->
+        Map.put(game, :moveablePieces, [game.currPlayer] ++ piecesNotInCamp(game))
+
+    end
+  end
+
+  # return the ID of all pieces that are not in camp for current player
+  def piecesNotInCamp(game) do
+    campStart = game.player[game.currPlayer] * 5 
+    game.pieceLocation[game.currPlayer]|> Enum.filter(fn x -> x > campStart + 3 end)
+    |> Enum.map(fn x -> Enum.find_index(game.pieceLocation, x) end)
+  end
+
+  ###############clickPiece#########################################
+
+  def clickPiece(game, i) do
+    pieceIDmin = game.player[game.currPlayer] * 4
+    iColor = cond do
+      0 <= i && i <= 3 ->
+        :y
+      4<=i && i<= 7 ->
+        :b
+      8<=i && i<=11 ->
+        :r
+      12<=i && i<= 15 ->
+        :g
+    end
+    i = i - game.player[icolor] * 4
+    result = if i < pieceIDmin || i > pieceIDmin + 3 || !moveable(game, i) do
+      game
+    else
+      moveClickedPiece(game, i, icolor)
+      
+    end 
+
+  end
+
+  def moveClickedPiece(game, i) do
+  
+  end
+
+
+
+  def moveable(game, i, color) do
+    result = cond do
+      Enum.count(game.moveablePieces) == 1 ->
+        false
+      Enum.at(game.moveablePieces, 0) != color ->
+        false
+      !Enum.member?(game.moveablePieces, i) ->
+        false
+      true ->
+        true
     end
   end
 
 
-
-  def clickDie(game) do
-    newDieNum = randomDieNum;
-    game
-    |>handleNextPlayer(newDieNum)
-    |>changeMoveablePiece(newDieNum)
-    |>changeLastRollList(newDieNum)
-  end
-
-
-  def nextPlayer() do
-  end 
-
-  def clickPiece(game, i) do
-
-  end 
-
-
+  # create board with attributes################################
   def board_init do
     #camp+start(type 0 and 1)
     %{}
@@ -143,7 +204,7 @@ defmodule Aeroplane.Game do
   def camp_start(map, color, s, e) when s == e do
     map|>Map.put(s, [color, 1])
   end
-=======
-  # do nothing
->>>>>>> dff79b644f96c7ae376d6f987bc4dfb9922cdc9b
+
+  ###############################################################
+
 end
