@@ -12,6 +12,7 @@ defmodule Aeroplane.Game do
       nextPlayer: 0,
       currDie: 6,
       moveablePieces: [:y],
+      dieActive: 1
      }
   end
 
@@ -25,12 +26,17 @@ defmodule Aeroplane.Game do
 
   ##################clickDie########################
   def clickDie(game) do
-    newDieNum = randomDieNum;
-    game
-    |>Map.put(:currDie, newDieNum)
-    |>handleNextPlayer(newDieNum)
-    |>changeMoveablePiece(newDieNum)
-    |>changeLastRollList(newDieNum)
+    if game.dieActive == 0 do
+      game
+    else
+      newDieNum = randomDieNum;
+      game
+      |>Map.put(:currDie, newDieNum)
+      |>handleNextPlayer(newDieNum)
+      |>changeMoveablePiece(newDieNum)
+      |>changeLastRollList(newDieNum)
+      |>Map.put(:dieActive, 0)
+    end
   end
 
   def randomDieNum do
@@ -69,7 +75,7 @@ defmodule Aeroplane.Game do
   #TODO didn't test
   def moveBack(game) do
     campbase = game.palyer[game.currPlayer] * 5
-    currLocation = game.pieceLocation[game.currPlayer]
+    currLocations = game.pieceLocation[game.currPlayer]
                    |> Enum.with_index()
                    |> Enum.map(fn {pos, pieceID} -> 
                      (if Enum.member?(game.last2Moved[game.currPlayer], pieceID) do
@@ -77,6 +83,7 @@ defmodule Aeroplane.Game do
                      else
                        pos
                      end) end)
+    game |>Map.put(:peiceLocation, game.pieceLocation |> Map.put(game.currPlayer, currLocations))
   end
 
 
@@ -87,8 +94,8 @@ defmodule Aeroplane.Game do
     [last1 | last2] = game.last2Roll[game.currPlayer]
     cond do
       last1 == 6 && last2 == 6 && roll == 6 ->
-        moveBack(game)
-        Map.put(game, :moveablePieces, [game.currPlayer])
+        game |> moveBack() 
+        |>Map.put(:moveablePieces, [game.currPlayer])
       last2 != 6 && roll == 6 ->
         Map.put(game, :moveablePieces, [game.currPlayer, 0, 1, 2, 3])
       roll != 6 ->
@@ -128,6 +135,7 @@ defmodule Aeroplane.Game do
       |>storeLastMove(i, iColor)
       |>resetMoveable()
       |>changePlayer()
+      |>Map.put(:dieActive, 1)
     end 
 
   end
@@ -159,21 +167,75 @@ defmodule Aeroplane.Game do
         game.player[color] * 5 + 4
       game.board[currLocation]|>Enum.at(1) == 1 ->
         22 + 13 * game.player[color] + game.currDie
-      game.board[currLocation]|>Enum.at(1) == 2 ->
+      game.board[currLocation]|>Enum.at(1) == 2 && game.board[currLocation]|>Enum.at(0) == color->
         71 + 6 * game.palyer[color] + game.currDie
       game.board[currLocation]|>Enum.at(1) == 4 ->
         [77 + game.player[color] * 6, currLocation + game.currDie]|>Enum.min()
-      game.board[currLocation]|>Enum.at(1) == 5 || game.board[currLocation]|>Enum.at(1) == 3 ->
-        #TODO
-        0
+      true ->
+        moveWithinBoundary(game, color, currLocation)
     end
     newLocationList = game.pieceLocation[color] |> List.replace_at(i, newLocation)
     game |> Map.put(:pieceLocation, game.pieceLocation |> Map.put(color, newLocationList))
   end
 
-  #TODO
-  def jumpClickedPiece(game, i, iColor) do
-    game
+
+  def moveWithinBoundary(game, color, currLocation) do
+    tempLocation = if currLocation + game.currDie > 71 do
+      rem(currLocation + game.currDie, 72) + 20
+    else
+      currLocation + game.currDie
+    end
+
+    cond do
+      color == :y ->
+        if currLocation > 20 && tempLocation < 20 do
+            currLocation + game.currDie  - 1  
+        else 
+            tempLocation
+       end
+     color == :b ->
+        if currLocation < 33 && tempLocation > 33 do
+          game.currDie - 33 + currLocation + 77
+        else 
+          tempLocation
+        end
+     color == :r ->
+        if currLocation < 46 && tempLocation > 46 do
+          game.currDie - 46 + currLocation + 83
+        else 
+          tempLocation
+        end
+     color == :g ->
+        if currLocation < 59 && tempLocation > 59 do
+          game.currDie - 59 + currLocation + 89
+        else 
+          tempLocation
+        end
+    end
+  end
+
+
+  
+  def jumpClickedPiece(game, i, color) do
+    currLocation = game.pieceLocation[color]|>Enum.at(i)
+    locationInfo = game.board[currLocation]
+    newLocation = cond do
+      locationInfo|>Enum.at(0) == color &&
+        locationInfo|>Enum.at(1) == 3 ->
+        if currLocation + 12 > 71 do
+          rem(currLocation + 12, 72) + 20
+        else
+          currLocation + 12
+        end
+      locationInfo |>Enum.at(0) == color ->
+        if currLocation + 4 > 71 do
+          rem(currLocation + 4, 72) + 20
+        else 
+          currLocation + 4
+        end
+      true ->
+        currLocation
+    end
   end
 
   #check if clicked piece is moveable
