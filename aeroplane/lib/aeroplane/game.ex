@@ -1,5 +1,6 @@
 defmodule Aeroplane.Game do
   def new do
+    # TODO: default starting color is now yellow
     %{
       board: board_init,
       pieceLocation: %{:r => [10, 11, 12, 13], :b => [5, 6, 7, 8], 
@@ -10,7 +11,7 @@ defmodule Aeroplane.Game do
       currPlayer: :y,
       nextPlayer: 0,
       currDie: 6,
-      moveablePieces: [],
+      moveablePieces: [:y],
      }
   end
 
@@ -117,24 +118,47 @@ defmodule Aeroplane.Game do
         :g
     end
     i = i - game.player[icolor] * 4
-    result = if i < pieceIDmin || i > pieceIDmin + 3 || !moveable(game, i) do
+    result = if !moveable(game, i) do
       game
     else
-      moveClickedPiece(game, i, icolor)
-      
+      game
+      |>moveClickedPiece(game, i, iColor)
+      |>jumpClickedPiece(game, i, iColor)
+      |>storeLastMove(game, i, iColor)
     end 
 
   end
 
-  def moveClickedPiece(game, i) do
-  
+  def storeLastMove(game, i, iColor) do
+    [last1 | last2] = game.last2Moved[iColor]
+    game |> Map.put(:last2Moved, game.last2Moved |> Map.put(iColor, [i, last1]))
+  end
+
+  def moveClickedPiece(game, i, color) do
+    currLocation = game.pieceLocaton[color]|>Enum.at(i)
+    newLocation = cond do 
+      board[currLocation]|>Enum.at(1) == 1 ->
+        22 + 13 * game.player[color] + game.currDie
+      board[currLocation]|>Enum.at(1) == 2 ->
+        71 + 6 * game.palyer[color] + game.currDie
+      board[currLocation]|>Enum.at(1) == 4 ->
+        [77 + game.player[color] * 6, currLocation + game.currDie]|>Enum.min()
+      board[currLocation} |>Enum.at(1) == 5 ->
+        0
+        #TODO
+    end
+    newLocationList = game.pieceLocation[color] | List.replace_at(i, newLocation)
+    game |> Map.put(:pieceLocation, game.pieceLocation |> Map.put(color, newLocationList))
+  end
+
+  #TODO
+  def jumpClickedPiece(game, i, iColor) do
   end
 
 
-
   def moveable(game, i, color) do
-    result = cond do
-      Enum.count(game.moveablePieces) == 1 ->
+    cond do
+      Enum.count(game.moveablePieces) <= 1 ->
         false
       Enum.at(game.moveablePieces, 0) != color ->
         false
@@ -146,7 +170,7 @@ defmodule Aeroplane.Game do
   end
 
 
-  # create board with attributes################################
+  ####################### create board with attributes################################
   def board_init do
     #camp+start(type 0 and 1)
     %{}
