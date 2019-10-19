@@ -66,6 +66,7 @@ defmodule Aeroplane.Game do
 
 
   #move back given player's given pieces to the player's camp
+  #TODO didn't test
   def moveBack(game) do
     campbase = game.palyer[game.currPlayer] * 5
     currLocation = game.pieceLocation[game.currPlayer]
