@@ -59,7 +59,7 @@ defmodule Aeroplane.Game do
   #add current roll to the front of the list
   def changeLastRollList(game,roll) do
     [last1 | last2] = game.last2Roll[game.currPlayer]
-    newLastRolls = [roll | last1]
+    newLastRolls = [roll, last1]
     game|>Map.put(:last2Roll, game.last2Roll|>Map.put(game.currPlayer,newLastRolls))
   end
 
@@ -100,7 +100,7 @@ defmodule Aeroplane.Game do
   def piecesNotInCamp(game) do
     campStart = game.player[game.currPlayer] * 5 
     game.pieceLocation[game.currPlayer]|> Enum.filter(fn x -> x > campStart + 3 end)
-    |> Enum.map(fn x -> Enum.find_index(game.pieceLocation, x) end)
+    |> Enum.map(fn x -> Enum.find_index(game.pieceLocation[game.currPlayer], fn y -> y == x end) end)
   end
 
   ###############clickPiece#########################################
@@ -117,45 +117,65 @@ defmodule Aeroplane.Game do
       12<=i && i<= 15 ->
         :g
     end
-    i = i - game.player[icolor] * 4
-    result = if !moveable(game, i) do
+    i = i - game.player[iColor] * 4
+    result = if !moveable(game, i, iColor) do
       game
     else
       game
-      |>moveClickedPiece(game, i, iColor)
-      |>jumpClickedPiece(game, i, iColor)
-      |>storeLastMove(game, i, iColor)
+      |>moveClickedPiece(i, iColor)
+      |>jumpClickedPiece(i, iColor)
+      |>storeLastMove(i, iColor)
+      |>resetMoveable()
+      |>changePlayer()
     end 
 
   end
 
+
+  #set moveable to empty list
+  def resetMoveable(game) do
+    game |> Map.put(:moveablePieces, [game.currPlayer])
+  end
+
+  # change curr player to nextPlayer
+  def changePlayer(game) do
+    game |> Map.put(:currPlayer, game.nextPlayer)
+    |> Map.put(:nextPlayer, 0)
+  end
+
+  #store the just clicked piece
   def storeLastMove(game, i, iColor) do
     [last1 | last2] = game.last2Moved[iColor]
     game |> Map.put(:last2Moved, game.last2Moved |> Map.put(iColor, [i, last1]))
   end
 
+
+  #move without jumping
   def moveClickedPiece(game, i, color) do
-    currLocation = game.pieceLocaton[color]|>Enum.at(i)
-    newLocation = cond do 
-      board[currLocation]|>Enum.at(1) == 1 ->
+    currLocation = game.pieceLocation[color]|>Enum.at(i)
+    newLocation = cond do
+      game.board[currLocation]|>Enum.at(1) == 0 ->
+        game.player[color] * 5 + 4
+      game.board[currLocation]|>Enum.at(1) == 1 ->
         22 + 13 * game.player[color] + game.currDie
-      board[currLocation]|>Enum.at(1) == 2 ->
+      game.board[currLocation]|>Enum.at(1) == 2 ->
         71 + 6 * game.palyer[color] + game.currDie
-      board[currLocation]|>Enum.at(1) == 4 ->
+      game.board[currLocation]|>Enum.at(1) == 4 ->
         [77 + game.player[color] * 6, currLocation + game.currDie]|>Enum.min()
-      board[currLocation} |>Enum.at(1) == 5 ->
-        0
+      game.board[currLocation]|>Enum.at(1) == 5 || game.board[currLocation]|>Enum.at(1) == 3 ->
         #TODO
+        0
     end
-    newLocationList = game.pieceLocation[color] | List.replace_at(i, newLocation)
+    newLocationList = game.pieceLocation[color] |> List.replace_at(i, newLocation)
     game |> Map.put(:pieceLocation, game.pieceLocation |> Map.put(color, newLocationList))
   end
 
   #TODO
   def jumpClickedPiece(game, i, iColor) do
+    game
   end
 
-
+  #check if clicked piece is moveable
   def moveable(game, i, color) do
     cond do
       Enum.count(game.moveablePieces) <= 1 ->
