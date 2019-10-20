@@ -21,12 +21,18 @@ defmodule Aeroplane.Game do
   def client_view(game) do
     %{
       currDie: game.currDie,
+      pieces_loc: pieceLocToCoor(game.pieceLocation, board_coor)
     }
-  end 
+  end
+
+  def pieceLocToCoor(location, coor) do
+    List.flatten([location[:y] | [location[:b] | [location[:r] | location[:g]]]])
+    |>Enum.map(fn x -> coor[x] end)
+  end
 
   ##################clickDie########################
   def clickDie(game) do
-    if game.dieActive == 0 do
+    game = if game.dieActive == 0 do
       game
     else
       newDieNum = randomDieNum;
@@ -35,7 +41,12 @@ defmodule Aeroplane.Game do
       |>handleNextPlayer(newDieNum)
       |>changeMoveablePiece(newDieNum)
       |>changeLastRollList(newDieNum)
-      |>Map.put(:dieActive, 0)
+    end 
+    if Enum.count(game.moveablePieces) <= 1 do
+      game |>Map.put(:currPlayer, game.nextPlayer)
+      |>Map.put(:dieActive, 1)
+    else
+      game|>Map.put(:dieActive, 0)
     end
   end
 
@@ -153,15 +164,16 @@ defmodule Aeroplane.Game do
   end
 
   #store the just clicked piece
-  def storeLastMove(game, i, iColor) do
-    [last1 | last2] = game.last2Moved[iColor]
-    game |> Map.put(:last2Moved, game.last2Moved |> Map.put(iColor, [i, last1]))
+  def storeLastMove(game, i, color) do
+    [last1 | last2] = game.last2Moved[color]
+    game |> Map.put(:last2Moved, game.last2Moved |> Map.put(color, [i, last1]))
   end
 
 
   #move without jumping
   def moveClickedPiece(game, i, color) do
     currLocation = game.pieceLocation[color]|>Enum.at(i)
+    IO.puts(currLocation)
     newLocation = cond do
       game.board[currLocation]|>Enum.at(1) == 0 ->
         game.player[color] * 5 + 4
@@ -227,7 +239,8 @@ defmodule Aeroplane.Game do
         else
           currLocation + 12
         end
-      locationInfo |>Enum.at(0) == color ->
+      locationInfo |>Enum.at(0) == color &&
+        locationInfo|>Enum.at(1) == 5->
         if currLocation + 4 > 71 do
           rem(currLocation + 4, 72) + 20
         else 
@@ -236,6 +249,8 @@ defmodule Aeroplane.Game do
       true ->
         currLocation
     end
+    newLocationList = game.pieceLocation[color] |> List.replace_at(i, newLocation)
+    game |> Map.put(:pieceLocation, game.pieceLocation |> Map.put(color, newLocationList))
   end
 
   #check if clicked piece is moveable
@@ -312,6 +327,128 @@ defmodule Aeroplane.Game do
     map|>Map.put(s, [color, 1])
   end
 
-  ###############################################################
+  ###################Create board with coordinates#################################
+  def board_coor do
+    %{} #camp
+    |>camp_coor()
+    |>start_coor()
+    |>bridge_coor()
+    |>normal_square()
+    |>triangles()
+  end
 
+
+
+  ###########normal square################
+  def normal_square(map) do
+    map
+    |>continuousSquare_helper(22, 19, 196, 426, -1, :v, normal_interval)
+    |>continuousSquare_helper(71, 69, 196, 548, -1, :v, normal_interval)
+    |>continuousSquare_helper(44, 49, 817, 426, 1, :v, normal_interval)
+    |>continuousSquare_helper(29, 27, 360, 256, -1, :v, normal_interval)
+    |>continuousSquare_helper(64, 62, 360, 715, -1, :v, normal_interval)
+    |>continuousSquare_helper(37, 39, 654, 256, 1, :v, normal_interval)
+    |>continuousSquare_helper(54, 56, 654, 715, 1, :v, normal_interval)
+    |>continuousSquare_helper(31, 36, 423, 198, 1, :h, normal_interval)
+    |>continuousSquare_helper(61, 56, 423, 817, -1, :h, normal_interval)
+    |>continuousSquare_helper(24, 26, 256, 362, 1, :h, normal_interval)
+    |>continuousSquare_helper(41, 43, 716, 362, 1, :h, normal_interval)
+    |>continuousSquare_helper(68, 66, 256, 652, -1, :h, normal_interval)
+    |>continuousSquare_helper(51, 49, 716, 651, -1, :h, normal_interval)
+  end
+
+  def normal_interval do
+    41
+  end
+
+  ##################triangles###############################
+  def triangles(map) do
+    map 
+    |>triangles_v(23, 3, 17, 213, 382)
+    |>triangles_v(69, -3, -17, 213, 634)
+    |>triangles_h()
+  end 
+
+  def triangles_v(map,s, acc1, acc2, s_x, s_y) do
+    map
+    |>continuousSquare_helper(s, s+2*acc1, s_x, s_y, acc1, :h, tra_inter_small)
+    |>continuousSquare_helper(s+acc2, s + acc2 + 2*acc1, s_x + tra_inter_big, s_y, acc1, :h, tra_inter_small)
+  end
+
+  def triangles_h(map) do
+    map
+    |>continuousSquare_helper(30, 24, 379, 212, -3, :v, tra_inter_small)
+    |>continuousSquare_helper(65, 59, 379, 212 + tra_inter_big, -3, :v, tra_inter_small)
+    |>continuousSquare_helper(36, 42, 635, 212, 3, :v, tra_inter_small)
+    |>continuousSquare_helper(53, 59, 635, 212 + tra_inter_big, 3, :v, tra_inter_small)
+  end
+    
+
+  def tra_inter_small do
+    129
+  end
+  def tra_inter_big do
+    459
+  end
+
+  ############bridge###############
+  def bridge_interval do
+    41
+  end
+
+  def bridge_coor(map) do
+    map|>continuousSquare_helper(72, 78, 256, 507, 1, :h, bridge_interval)
+    |>continuousSquare_helper(89, 83, 550, 507, -1, :h, bridge_interval)
+    |>continuousSquare_helper(78, 84, 507, 256, 1, :v, bridge_interval)
+    |>continuousSquare_helper(95, 89, 507, 550, -1, :v, bridge_interval)
+  end
+
+  def continuousSquare_helper(map, s, e, s_x, s_y, acc, direction, interval) when s != e do
+    if direction == :h do
+      map|>Map.put(s, %{x: s_x, y: s_y})
+      |>continuousSquare_helper(s + acc, e, s_x + interval, s_y, acc, direction, interval)
+    else 
+      map |>Map.put(s, %{x: s_x, y: s_y})
+      |>continuousSquare_helper(s + acc, e, s_x, s_y + interval, acc, direction, interval)
+    end
+  end
+
+  def continuousSquare_helper(map, s, e, s_x, s_y, acc, direction, interval) when s == e do
+    map
+  end
+  ###########start###############
+  def start_coor(map) do
+    map|>Map.put(4, %{x: 153, y: 350})
+    |>Map.put(9, %{x: 553, y: 155})
+    |>Map.put(14, %{x: 860, y: 666})
+    |>Map.put(19, %{x: 348, y: 861})
+  end
+  #######Camp###################
+  def camp_interval_small do
+    64
+  end
+
+  def camp_interval_big do
+    554
+  end
+
+  def camp_coor_s do
+    198
+  end
+
+  
+  def camp_coor_color(map, s, sx, sy) do
+    map|>Map.put(s, %{x: sx, y: sy}) |>Map.put(s + 1, %{x: sx + camp_interval_small, y: sy})
+    |>Map.put(s + 2, %{x: sx, y: sy + camp_interval_small}) 
+    |> Map.put(s + 3, %{x: sx + camp_interval_small, y: sy + camp_interval_small})
+  end
+
+  def camp_coor(map) do
+    map|>camp_coor_color(0, camp_coor_s, camp_coor_s)
+    |>camp_coor_color(5, camp_coor_s + camp_interval_big, camp_coor_s)
+    |>camp_coor_color(15, camp_coor_s, camp_coor_s + camp_interval_big)
+    |>camp_coor_color(10, camp_coor_s + camp_interval_big, camp_coor_s + camp_interval_big)
+  end 
+
+  ######################################################################################
 end
