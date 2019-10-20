@@ -151,7 +151,6 @@ defmodule Aeroplane.Game do
 
   end
 
-
   #set moveable to empty list
   def resetMoveable(game) do
     game |> Map.put(:moveablePieces, [game.currPlayer])
@@ -251,6 +250,7 @@ defmodule Aeroplane.Game do
     end
     newLocationList = game.pieceLocation[color] |> List.replace_at(i, newLocation)
     game |> Map.put(:pieceLocation, game.pieceLocation |> Map.put(color, newLocationList))
+    |>pieceFight(newLocation, i)
   end
 
   #check if clicked piece is moveable
@@ -267,6 +267,30 @@ defmodule Aeroplane.Game do
     end
   end
 
+
+  
+  #if end up on other piece, send that piece back to camp
+  #TODO: didn't test
+  def pieceFight(game, newLocation, i) do
+    location = game.pieceLocation
+    previousLoc = List.flatten([location[:y] | [location[:b] | [location[:r] | location[:g]]]])
+                  |> List.replace_at(i, -1)
+    if Enum.member?(previousLoc, newLocation) do
+      prevI = Enum.find_index(previousLoc, fn x -> x = newLocation end)
+      cond do
+        prevI <= 3 ->
+          game|>Mpa.put(:pieceLocation, game.pieceLocation |> Map.put(:y, game.pieceLocation[:y]|>Enum.replace_at(prevI, prevI)))
+        prevI <= 7 ->
+          game|>Mpa.put(:pieceLocation, game.pieceLocation |> Map.put(:b, game.pieceLocation[:b]|>Enum.replace_at(prevI - 4, prevI + 1)))
+        prevI <= 11 ->
+          game|>Mpa.put(:pieceLocation, game.pieceLocation |> Map.put(:r, game.pieceLocation[:r]|>Enum.replace_at(prevI - 8, prevI + 2)))
+        prevI <= 15 ->
+          game|>Mpa.put(:pieceLocation, game.pieceLocation |> Map.put(:g, game.pieceLocation[:g]|>Enum.replace_at(prevI - 12,prevI + 3)))
+      end
+    else
+        game
+    end
+  end
 
   ####################### create board with attributes################################
   def board_init do
