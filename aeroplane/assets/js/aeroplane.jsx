@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Stage, Layer, Circle, Image, Text } from 'react-konva';
 import _ from "lodash";
+import Konva from 'konva';
 // import useImage from 'use-image';
 // import { ImageBackground } from 'react-native';
 
@@ -90,6 +91,7 @@ class Aeroplane extends React.Component {
 function Die(params) {
   let {number, on_click_die} = params;
   let img = new window.Image();
+  // let img = new Image();
   let img_path = "/images/" + number.toString() + ".png";
   
   img.onload = () => {
