@@ -17,14 +17,23 @@ defmodule AeroplaneWeb.GamesChannel do
       end
     end
 
-    def handle_in("move", %{"index" => ii}, socket) do
+    def handle_in("on_click_piece", %{"index" => ii}, socket) do
         name = socket.assigns[:name]
         # replace Game.move with actual function name
-        game = Game.move(socket.assigns[:game])
+        game = Game.clickPiece(socket.assigns[:game], ii)
         socket = assign(socket, :game, game)
         # BackupAgent.put(name, game)
         {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
     end
+
+    def handle_in("on_click_die", %{}, socket) do
+      name = socket.assigns[:name]
+      # replace Game.move with actual function name
+      game = Game.clickDie(socket.assigns[:game])
+      socket = assign(socket, :game, game)
+      # BackupAgent.put(name, game)
+      {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
+  end
   
     # Add authorization logic here as required.
     defp authorized?(_payload) do
