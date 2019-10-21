@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Stage, Layer, Circle, Image } from 'react-konva';
+import { Stage, Layer, Circle, Image, Text } from 'react-konva';
 import _ from "lodash";
 // import useImage from 'use-image';
 // import { ImageBackground } from 'react-native';
@@ -24,6 +24,7 @@ class Aeroplane extends React.Component {
       // a list of pieces locations with order: yellow, blue, red, green
       pieces_loc: [],
       die: 0,
+      curr_player: "",
     };
 
     this.channel
@@ -77,7 +78,7 @@ class Aeroplane extends React.Component {
             <Layer>
               <Die number={this.state.die} on_click_die={this.on_click_die.bind(this)}/>
               {pieces}
-              
+              <CurrPlayer player={this.state.curr_player} />
               {/* <Image image={img} width={100} height={100} x={40} y={400}  onClick={this.on_click_die.bind(this)}/> */}
             </Layer>
           </Stage>
@@ -96,4 +97,9 @@ function Die(params) {
   }
   img.src = img_path;
   return <Image image={img} width={100} height={100} x={40} y={400}  onClick={on_click_die}/>
+}
+
+function CurrPlayer(params) {
+  let {player} = params;
+  return <Text fontSize={30} text={"current player: " + player} x={350} y={100} />
 }

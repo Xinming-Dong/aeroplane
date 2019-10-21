@@ -21,8 +21,22 @@ defmodule Aeroplane.Game do
   def client_view(game) do
     %{
       die: game.currDie,
-      pieces_loc: pieceLocToCoor(game.pieceLocation, board_coor)
+      pieces_loc: pieceLocToCoor(game.pieceLocation, board_coor),
+      curr_player: getCurrPlayer(game.currPlayer),
     }
+  end
+
+  def getCurrPlayer(player) do
+    cond do
+      player == :y ->
+        "yellow"
+      player == :b ->
+        "blue"
+      player == :r ->
+        "red"
+      player == :g ->
+        "green"
+    end
   end
 
   def pieceLocToCoor(location, coor) do
@@ -279,13 +293,13 @@ defmodule Aeroplane.Game do
       prevI = Enum.find_index(previousLoc, fn x -> x = newLocation end)
       cond do
         prevI <= 3 ->
-          game|>Mpa.put(:pieceLocation, game.pieceLocation |> Map.put(:y, game.pieceLocation[:y]|>List.replace_at(prevI, prevI)))
+          game|>Map.put(:pieceLocation, game.pieceLocation |> Map.put(:y, game.pieceLocation[:y]|>List.replace_at(prevI, prevI)))
         prevI <= 7 ->
-          game|>Mpa.put(:pieceLocation, game.pieceLocation |> Map.put(:b, game.pieceLocation[:b]|>List.replace_at(prevI - 4, prevI + 1)))
+          game|>Map.put(:pieceLocation, game.pieceLocation |> Map.put(:b, game.pieceLocation[:b]|>List.replace_at(prevI - 4, prevI + 1)))
         prevI <= 11 ->
-          game|>Mpa.put(:pieceLocation, game.pieceLocation |> Map.put(:r, game.pieceLocation[:r]|>List.replace_at(prevI - 8, prevI + 2)))
+          game|>Map.put(:pieceLocation, game.pieceLocation |> Map.put(:r, game.pieceLocation[:r]|>List.replace_at(prevI - 8, prevI + 2)))
         prevI <= 15 ->
-          game|>Mpa.put(:pieceLocation, game.pieceLocation |> Map.put(:g, game.pieceLocation[:g]|>List.replace_at(prevI - 12, prevI + 3)))
+          game|>Map.put(:pieceLocation, game.pieceLocation |> Map.put(:g, game.pieceLocation[:g]|>List.replace_at(prevI - 12, prevI + 3)))
       end
     else
         game
