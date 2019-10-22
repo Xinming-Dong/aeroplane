@@ -143,5 +143,5 @@ function Die(params) {
 
 function CurrPlayer(params) {
   let {player} = params;
-  return <Text fontSize={30} text={"current player: " + player} x={350} y={100} />
+  return <Text class="signal" fontSize={30} fontFamily={"Comic Sans MS"} text={"current player: " + player} x={380} y={70} />
 }

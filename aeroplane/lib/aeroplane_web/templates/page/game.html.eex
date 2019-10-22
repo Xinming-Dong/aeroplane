@@ -1,12 +1,13 @@
 <script>
- window.gameName = "<%= @name %>";
+    window.gameName = "<%= @name %>";
 </script>
 
 <div class="row">
-  <div class="column">
-    <h1>Game Room: <%= @name %></h1>
-    <div id="root">
-      React component loading...
+    <div class="column">
+        <h1 class="logo">Game Room: <%= @name %></h1>
+        <div id="root">
+            React component loading...
+        </div>
     </div>
-  </div>
 </div>
+
