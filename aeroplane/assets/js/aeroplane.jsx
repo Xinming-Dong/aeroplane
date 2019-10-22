@@ -11,7 +11,8 @@ export default function aeroplane_init(root, channel) {
 // r: radius of pieces
 let W = 1024;
 let H = 1024;
-let R = 15;
+let R = 20;
+let buttons_clickable = true;
 
 class Aeroplane extends React.Component {
   constructor(props) {
@@ -33,18 +34,52 @@ class Aeroplane extends React.Component {
   
 
   got_view(view) {
-    console.log(view.game.state);
+    console.log(view.game.pieces_loc);
     this.setState(view.game);
   }
 
-  on_click_piece(ii) {
-    this.channel.push("on_click_piece", { index: ii })
-                .receive("ok", this.got_view.bind(this));
+  on_click_die() {
+    if (buttons_clickable) {
+      this.channel.push("on_click_die", {})
+                .receive("ok", this.got_view_die.bind(this));
+    }
   }
 
-  on_click_die() {
-    this.channel.push("on_click_die", {})
+  on_click_piece(ii) {
+    if (buttons_clickable) {
+      this.channel.push("on_click_piece", { index: ii })
                 .receive("ok", this.got_view.bind(this));
+    }
+  }
+
+  got_view_die(view) {
+    console.log("previous state: " + this.state.curr_player);
+    buttons_clickable = false;
+    this.setState({
+      pieces_loc: view.game.pieces_loc,
+      die: view.game.die,
+    });
+    
+    setTimeout(
+      function() {
+        console.log("state.player: " + this.state.curr_player);
+        console.log("view.game.player: " + view.game.curr_player);
+        if(this.state.curr_player == view.game.curr_player) {
+          console.log("same");
+          console.log("set " + this.state.curr_player);
+          this.setState({
+            curr_player: this.state.curr_player,
+          });
+        }
+        else {
+          console.log("different");
+          console.log("set " + view.game.curr_player);
+          this.setState({
+            curr_player: view.game.curr_player,
+          });
+        }
+        buttons_clickable = true;
+      }.bind(this), 2000);
   }
 
   render() {
