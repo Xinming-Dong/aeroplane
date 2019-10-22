@@ -2,9 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Stage, Layer, Circle, Image, Text } from 'react-konva';
 import _ from "lodash";
-import Konva from 'konva';
-// import useImage from 'use-image';
-// import { ImageBackground } from 'react-native';
 
 export default function aeroplane_init(root, channel) {
   ReactDOM.render(<Aeroplane channel={channel} />, root);
@@ -36,20 +33,16 @@ class Aeroplane extends React.Component {
   
 
   got_view(view) {
-    console.log("new view", view);
+    console.log(view.game.state);
     this.setState(view.game);
   }
 
   on_click_piece(ii) {
-    console.log("on_click_piece");
-    // this.move(ii);
-    // uncomment this part
     this.channel.push("on_click_piece", { index: ii })
                 .receive("ok", this.got_view.bind(this));
   }
 
   on_click_die() {
-    console.log("click the die");
     this.channel.push("on_click_die", {})
                 .receive("ok", this.got_view.bind(this));
   }
@@ -58,16 +51,16 @@ class Aeroplane extends React.Component {
     // pieces
     let pieces = _.map(this.state.pieces_loc, (pp, ii) => {
       if (ii < 4) {
-        return <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill={"orange"} onClick={this.on_click_piece.bind(this, ii)}/>;
+        return <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill={"orange"} stroke={"black"} strokeWidth={3.5} onClick={this.on_click_piece.bind(this, ii)}/>;
       }
       if (ii >= 4 && ii < 8) {
-        return <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill={"blue"} onClick={this.on_click_piece.bind(this, ii)}/>;
+        return <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill={"#0000FF"} stroke={"black"} strokeWidth={3.5} onClick={this.on_click_piece.bind(this, ii)}/>;
       }
       if (ii >= 8 && ii < 12) {
-        return <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill={"red"} onClick={this.on_click_piece.bind(this, ii)}/>;
+        return <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill={"#FF0033"} stroke={"black"} strokeWidth={3.5} onClick={this.on_click_piece.bind(this, ii)}/>;
       }
       if (ii >= 12) {
-        return <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill={"green"} onClick={this.on_click_piece.bind(this, ii)}/>;
+        return <Circle key={ii} radius={R} x={pp.x} y={pp.y} fill={"#006633"} stroke={"black"} strokeWidth={3.5} onClick={this.on_click_piece.bind(this, ii)}/>;
       } 
     });
       
@@ -77,10 +70,9 @@ class Aeroplane extends React.Component {
           {/* no component */}
           <Stage width={W} height={H}>
             <Layer>
-              <Die number={this.state.die} on_click_die={this.on_click_die.bind(this)}/>
+              <Die number={this.state.die} player={this.state.curr_player} on_click_die={this.on_click_die.bind(this)}/>
               {pieces}
               <CurrPlayer player={this.state.curr_player} />
-              {/* <Image image={img} width={100} height={100} x={40} y={400}  onClick={this.on_click_die.bind(this)}/> */}
             </Layer>
           </Stage>
         </div>
@@ -89,16 +81,29 @@ class Aeroplane extends React.Component {
 }
 
 function Die(params) {
-  let {number, on_click_die} = params;
+  let {number, player, on_click_die} = params;
   let img = new window.Image();
   // let img = new Image();
   let img_path = "/images/" + number.toString() + ".png";
   
   img.onload = () => {
-    console.log(img_path)
+    console.log("number on the die: " + number.toString());
   }
   img.src = img_path;
-  return <Image image={img} width={100} height={100} x={40} y={400}  onClick={on_click_die}/>
+
+  if (player == "yellow") {
+    return <Image image={img} width={100} height={100} x={25} y={200}  onClick={on_click_die}/>
+  }
+  else if (player == "blue") {
+    return <Image image={img} width={100} height={100} x={880} y={200}  onClick={on_click_die}/>
+  }
+  else if (player == "red") {
+    return <Image image={img} width={100} height={100} x={880} y={725}  onClick={on_click_die}/>
+  }
+  else {
+    return <Image image={img} width={100} height={100} x={25} y={725}  onClick={on_click_die}/>
+  }
+  
 }
 
 function CurrPlayer(params) {
