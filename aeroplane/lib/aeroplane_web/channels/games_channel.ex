@@ -19,7 +19,6 @@ defmodule AeroplaneWeb.GamesChannel do
 
     def handle_in("on_click_piece", %{"index" => ii}, socket) do
         name = socket.assigns[:name]
-        # replace Game.move with actual function name
         game = Game.clickPiece(socket.assigns[:game], ii)
         socket = assign(socket, :game, game)
         # BackupAgent.put(name, game)
