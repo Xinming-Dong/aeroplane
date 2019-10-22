@@ -21,15 +21,21 @@ defmodule AeroplaneWeb.GamesChannel do
         name = socket.assigns[:name]
         case GameServer.on_click_piece(name, ii) do
           [st1, st2, st3] ->
+            IO.inspect st1
+            IO.inspect st2
+            IO.inspect st3
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
-            Process.send_after(self(), {:timeoutUpdate, st2}, 300)
-            Process.send_after(self(), {:timeoutUpdate, st3}, 600)
+            Process.send_after(self(), {:update, st2}, 300)
+            Process.send_after(self(), {:update, st3}, 600)
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
           [st1, st2] ->
+            IO.inspect st1
+            IO.inspect st2
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
-            Process.send_after(self(), {:timeoutUpdate, st2}, 300)
+            Process.send_after(self(), {:update, st2}, 300)
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
           st1 ->
+            IO.inspect st1
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
         end
@@ -46,9 +52,9 @@ defmodule AeroplaneWeb.GamesChannel do
       {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
     end
 
-    def handle_info({:timeoutUpdate, game}, socket) do
+    def handle_info({:update, game}, socket) do
       socket = assign(socket, :game, game);
-      broadcast!(socket, "timeoutUpdate", %{ "game" => Game.client_view(game) })
+      broadcast!(socket, "update", %{ "game" => Game.client_view(game) })
       {:noreply, socket}
     end
 
@@ -57,3 +63,4 @@ defmodule AeroplaneWeb.GamesChannel do
       true
     end
   end
+
