@@ -12,6 +12,7 @@ defmodule Aeroplane.Application do
       AeroplaneWeb.Endpoint,
       # Starts a worker by calling: Aeroplane.Worker.start_link(arg)
       # {Aeroplane.Worker, arg},
+      Aeroplane.GameSup,
       Aeroplane.BackupAgent,
     ]
 
