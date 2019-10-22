@@ -128,10 +128,8 @@ defmodule Aeroplane.Game do
         game |> moveBack()
         |>Map.put(:moveablePieces, [game.currPlayer])
       roll == 6 ->
-        IO.puts("here")
         Map.put(game, :moveablePieces, [game.currPlayer] ++ withoutAtDes(game.currPlayer, [0, 1, 2, 3], game.pieceLocation[game.currPlayer]))
       roll != 6 ->
-        IO.puts("here1")
         Map.put(game, :moveablePieces, [game.currPlayer] ++ withoutAtDes(game.currPlayer, piecesNotInCamp(game), game.pieceLocation[game.currPlayer]))
 
     end
@@ -173,18 +171,37 @@ defmodule Aeroplane.Game do
     if !moveable(game, i, iColor) do
       game
     else
-      game = game
+      st1 = game
       |>moveClickedPiece(i, iColor)
+      st2 = st1
       |>jumpClickedPiece(i, iColor)
-      |>storeLastMove(i, iColor)
-      |>resetMoveable()
-      |>changePlayer()
-      winner = getWinner(game.pieceLocation)
-      if winner !=  0 do
-        game|>Map.put(:winner, winner)
-      else
-        game|>Map.put(:dieActive, 1)
+      st3 = st2
+      |> moreJump(i, iColor)
+      cond do
+        st1 == st2 && st2 == st3 ->
+          st1|> afterMovePiece(i, iColor)
+        st1 != st2 && st2 == st3 ->
+          st2 = st2 |>afterMovePiece(i, iColor)
+          [st1, st2]
+        st1 != st2 && st2 != st3 ->
+          st3 = st3|>afterMovePiece(i, iColor)
+          [st1, st2, st3]
       end
+    end
+  end
+
+  def afterMovePiece(game, i, iColor) do
+    IO.puts("here")
+    game = game
+    |>pieceFight(i, iColor)
+    |>storeLastMove(i, iColor)
+    |>resetMoveable()
+    |>changePlayer()
+    winner = getWinner(game.pieceLocation)
+    if winner !=  0 do
+      game|>Map.put(:winner, winner)
+    else
+      game|>Map.put(:dieActive, 1)
     end
   end
 
@@ -301,16 +318,14 @@ defmodule Aeroplane.Game do
       true ->
         currLocation
     end
-    |> moreJump(game, color)
     game |>Map.put(:pieceLocation, game.pieceLocation
     |> Map.put(color, game.pieceLocation[color] |> List.replace_at(i, newLocation)))
-    |>pieceFight(newLocation, i, color)
-
   end
 
   #jump the second time when land on big jump after first jump.
-  def moreJump(loc, game, color) do
-    if game.board[loc]|>Enum.at(1) == 3
+  def moreJump(game, i, color) do
+    loc = game.pieceLocation[color]|>Enum.at(i)
+    newLoc = if game.board[loc]|>Enum.at(1) == 3
     && game.board[loc] |>Enum.at(0) == color do
       if loc + 12 > 71 do
         rem(loc + 12, 72) + 20
@@ -320,6 +335,8 @@ defmodule Aeroplane.Game do
     else
       loc
     end
+    game |>Map.put(:pieceLocation, game.pieceLocation
+    |> Map.put(color, game.pieceLocation[color] |> List.replace_at(i, newLoc)))
   end
 
   #check if clicked piece is moveable
@@ -340,7 +357,8 @@ defmodule Aeroplane.Game do
 
   #if end up on other piece, send that piece back to camp
   #TODO: didn't test
-  def pieceFight(game, newLocation, i, color) do
+  def pieceFight(game, i, color) do
+    newLocation = game.pieceLocation[color]|>Enum.at(i)
     location = game.pieceLocation
     previousLoc = List.flatten([location[:y] | [location[:b] | [location[:r] | location[:g]]]])
     |>List.replace_at(i, -1)
