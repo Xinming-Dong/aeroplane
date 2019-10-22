@@ -2,14 +2,14 @@ defmodule AeroplaneWeb.GamesChannel do
     use AeroplaneWeb, :channel
     alias Aeroplane.Game
     alias Aeroplane.BackupAgent
+    alias Aeroplane.GameServer
 
     def join("games:" <> name, payload, socket) do
       if authorized?(payload) do
-        game = BackupAgent.get(name) || Game.new()
+        GameServer.start(name)
+        game = GameServer.peek(name)
         BackupAgent.put(name, game)
-        # game = Game.new()
         socket = socket
-        |> assign(:game, game)
         |> assign(:name, name)
         {:ok, %{"join" => name, "game" => Game.client_view(game)}, socket}
       else
@@ -19,36 +19,36 @@ defmodule AeroplaneWeb.GamesChannel do
 
     def handle_in("on_click_piece", %{"index" => ii}, socket) do
         name = socket.assigns[:name]
-        case Game.clickPiece(socket.assigns[:game], ii) do
+        case GameServer.on_click_piece(name, ii) do
           [st1, st2, st3] ->
-            socket = assign(socket, :game, st1)
-            BackupAgent.put(name, st3)
-            Process.send_after(self(), {:update, st2}, 300)
-            Process.send_after(self(), {:update, st3}, 600)
+            broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
+            Process.send_after(self(), {:timeoutUpdate, st2}, 300)
+            Process.send_after(self(), {:timeoutUpdate, st3}, 600)
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
           [st1, st2] ->
-            socket = assign(socket, :game, st1);
-            BackupAgent.put(name, st2)
-            Process.send_after(self(), {:update, st2}, 300)
+            broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
+            Process.send_after(self(), {:timeoutUpdate, st2}, 300)
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
           st1 ->
-            socket = assign(socket, :game, st1)
-            BackupAgent.put(name, st1)
+            broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
         end
     end
 
     def handle_in("on_click_die", %{}, socket) do
       name = socket.assigns[:name]
-      game = Game.clickDie(socket.assigns[:game])
-      socket = assign(socket, :game, game)
-      BackupAgent.put(name, game)
+      game = GameServer.on_click_die(name)
+      broadcast!(socket, "update", %{ "game" => Game.client_view(game) })
+
+      # game = Game.clickDie(socket.assigns[:game])
+      # socket = assign(socket, :game, game)
+      # BackupAgent.put(name, game)
       {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
     end
 
-    def handle_info({:update, game}, socket) do
+    def handle_info({:timeoutUpdate, game}, socket) do
       socket = assign(socket, :game, game);
-      push(socket, "update", %{"game" => Game.client_view(game)})
+      broadcast!(socket, "timeoutUpdate", %{ "game" => Game.client_view(game) })
       {:noreply, socket}
     end
 

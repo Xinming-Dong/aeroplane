@@ -30,6 +30,8 @@ class Aeroplane extends React.Component {
         .join()
         .receive("ok", this.got_view.bind(this))
         .receive("error", resp => { console.log("Unable to join", resp); });
+
+    this.channel.on("update", this.got_view.bind(this));
   }
   
 
