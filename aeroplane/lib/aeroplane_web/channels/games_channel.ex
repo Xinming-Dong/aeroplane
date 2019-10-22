@@ -1,13 +1,13 @@
 defmodule AeroplaneWeb.GamesChannel do
     use AeroplaneWeb, :channel
     alias Aeroplane.Game
-    # alias Aeroplane.BackupAgent
+    alias Aeroplane.BackupAgent
   
     def join("games:" <> name, payload, socket) do
       if authorized?(payload) do
-        # game = BackupAgent.get(name) || Game.new()
-        # BackupAgent.put(name, game)
-        game = Game.new()
+        game = BackupAgent.get(name) || Game.new()
+        BackupAgent.put(name, game)
+        # game = Game.new()
         socket = socket
         |> assign(:game, game)
         |> assign(:name, name)
@@ -21,16 +21,15 @@ defmodule AeroplaneWeb.GamesChannel do
         name = socket.assigns[:name]
         game = Game.clickPiece(socket.assigns[:game], ii)
         socket = assign(socket, :game, game)
-        # BackupAgent.put(name, game)
+        BackupAgent.put(name, game)
         {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
     end
 
     def handle_in("on_click_die", %{}, socket) do
       name = socket.assigns[:name]
-      # replace Game.move with actual function name
       game = Game.clickDie(socket.assigns[:game])
       socket = assign(socket, :game, game)
-      # BackupAgent.put(name, game)
+      BackupAgent.put(name, game)
       {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
   end
   
