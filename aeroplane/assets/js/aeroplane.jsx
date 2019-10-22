@@ -79,7 +79,7 @@ class Aeroplane extends React.Component {
           });
         }
         buttons_clickable = true;
-      }.bind(this), 2000);
+      }.bind(this), 800);
   }
 
   render() {
