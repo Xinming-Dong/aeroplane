@@ -6,10 +6,10 @@
     <%= form_for @conn, "/game", fn f-> %>
       <label class="join">Game Name</label>
       <label> 
-        <%=text_input f, :name, [class: "input_name"] %> 
+        <%=text_input f, :name, [class: "input_name"]%> 
       </label>
       <p>
-        <button class="join_btn" onclick="get_name()">Join</button>
+        <%= submit "Join", [class: "join_btn"]%>
       </p>
       <script type="text/javascript">
       function get_name(){
