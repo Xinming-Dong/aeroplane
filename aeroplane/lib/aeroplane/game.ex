@@ -2,7 +2,7 @@ defmodule Aeroplane.Game do
   def new do
     # TODO: default starting color is now yellow
     %{
-      board: board_init,
+      board: board_init(),
       pieceLocation: %{:r => [10, 11, 12, 13], :b => [5, 6, 7, 8],
                        :y => [0, 1, 2, 3], :g => [15, 16, 17, 18]},
       last2Moved: %{:r => [-1, -1], :b => [-1, -1], :y => [-1, -1], :g =>[-1, -1]},
@@ -12,7 +12,8 @@ defmodule Aeroplane.Game do
       nextPlayer: 0,
       currDie: 0,
       moveablePieces: [:y],
-      dieActive: 1
+      dieActive: 1,
+      winner: ""
      }
   end
 
@@ -21,8 +22,9 @@ defmodule Aeroplane.Game do
   def client_view(game) do
     %{
       die: game.currDie,
-      pieces_loc: pieceLocToCoor(game.pieceLocation, board_coor),
+      pieces_loc: pieceLocToCoor(game.pieceLocation, board_coor()),
       curr_player: getCurrPlayer(game.currPlayer),
+      winner: game.winner
     }
   end
 
@@ -49,7 +51,7 @@ defmodule Aeroplane.Game do
     game = if game.dieActive == 0 do
       game
     else
-      newDieNum = randomDieNum;
+      newDieNum = randomDieNum(game);
       game
       |>Map.put(:currDie, newDieNum)
       |>handleNextPlayer(newDieNum)
@@ -64,8 +66,12 @@ defmodule Aeroplane.Game do
     end
   end
 
-  def randomDieNum do
-   :rand.uniform(6)
+  def randomDieNum(game) do
+    if piecesNotInCamp(game)|>Enum.count() == 0 do
+      Enum.random([1,2,3,4,5,6,6,6])
+    else
+      :rand.uniform(6)
+    end
   end
 
   #change next Player
@@ -82,14 +88,14 @@ defmodule Aeroplane.Game do
   # TODO: player number is currently hardcoded
   def switchPlayer(game) do
     next = rem(game.player[game.currPlayer] + 1, 4)
-    game.player|>Enum.find(fn {k, v} -> v == next end)|>elem(0)
+    game.player|>Enum.find(fn {_k, v} -> v == next end)|>elem(0)
   end
 
 
 
   #add current roll to the front of the list
   def changeLastRollList(game,roll) do
-    [last1 | last2] = game.last2Roll[game.currPlayer]
+    [last1 | _last2] = game.last2Roll[game.currPlayer]
     newLastRolls = [roll, last1]
     game|>Map.put(:last2Roll, game.last2Roll|>Map.put(game.currPlayer,newLastRolls))
   end
@@ -107,7 +113,6 @@ defmodule Aeroplane.Game do
                      else
                        pos
                      end) end)
-    IO.puts(currLocations)
     game |>Map.put(:pieceLocation, game.pieceLocation |> Map.put(game.currPlayer, currLocations))
   end
 
@@ -117,16 +122,30 @@ defmodule Aeroplane.Game do
   #change moveable list,depends on current player and new roll number
   def changeMoveablePiece(game, roll) do
     [last1 | last2] = game.last2Roll[game.currPlayer]
+    last2 = Enum.at(last2, 0)
     cond do
       last1 == 6 && last2 == 6 && roll == 6 ->
         game |> moveBack()
         |>Map.put(:moveablePieces, [game.currPlayer])
-      last2 != 6 && roll == 6 ->
-        Map.put(game, :moveablePieces, [game.currPlayer, 0, 1, 2, 3])
+      roll == 6 ->
+        IO.puts("here")
+        Map.put(game, :moveablePieces, [game.currPlayer] ++ withoutAtDes(game.currPlayer, [0, 1, 2, 3], game.pieceLocation[game.currPlayer]))
       roll != 6 ->
-        Map.put(game, :moveablePieces, [game.currPlayer] ++ piecesNotInCamp(game))
+        IO.puts("here1")
+        Map.put(game, :moveablePieces, [game.currPlayer] ++ withoutAtDes(game.currPlayer, piecesNotInCamp(game), game.pieceLocation[game.currPlayer]))
 
     end
+  end
+
+  #exclude the id of the piece that are already at the destination
+  def withoutAtDes(player, list, location) do
+    des = cond do
+      player == :y -> 77
+      player == :b -> 83
+      player == :r -> 89
+      player == :g -> 95
+    end
+    list|>Enum.filter(fn x -> Enum.at(location, x)!= des end)
   end
 
   # return the ID of all pieces that are not in camp for current player
@@ -134,14 +153,12 @@ defmodule Aeroplane.Game do
     campStart = game.player[game.currPlayer] * 5
     result = game.pieceLocation[game.currPlayer]|> Enum.filter(fn x -> x > campStart + 3 end)
     |> Enum.map(fn x -> Enum.find_index(game.pieceLocation[game.currPlayer], fn y -> y == x end) end)
-    IO.puts(result)
     result
   end
 
   ###############clickPiece#########################################
 
   def clickPiece(game, i) do
-    pieceIDmin = game.player[game.currPlayer] * 4
     iColor = cond do
       0 <= i && i <= 3 ->
         :y
@@ -153,18 +170,39 @@ defmodule Aeroplane.Game do
         :g
     end
     i = i - game.player[iColor] * 4
-    result = if !moveable(game, i, iColor) do
+    if !moveable(game, i, iColor) do
       game
     else
-      game
+      game = game
       |>moveClickedPiece(i, iColor)
       |>jumpClickedPiece(i, iColor)
       |>storeLastMove(i, iColor)
       |>resetMoveable()
       |>changePlayer()
-      |>Map.put(:dieActive, 1)
+      winner = getWinner(game.pieceLocation)
+      if winner !=  0 do
+        game|>Map.put(:winner, winner)
+      else
+        game|>Map.put(:dieActive, 1)
+      end
     end
+  end
 
+
+  #return 0 if game is not over, otherwise return winner
+  def getWinner(loc) do
+    cond do
+      loc[:y]|>Enum.count(fn x -> x == 77 end) == 4 ->
+        "Yellow"
+      loc[:b]|>Enum.count(fn x -> x == 83 end) == 4 ->
+        "Blue"
+      loc[:r]|>Enum.count(fn x -> x == 89 end) == 4 ->
+        "Red"
+      loc[:g]|>Enum.count(fn x -> x == 95 end) == 4->
+        "Green"
+      true ->
+        0
+    end
   end
 
   #set moveable to empty list
@@ -180,7 +218,7 @@ defmodule Aeroplane.Game do
 
   #store the just clicked piece
   def storeLastMove(game, i, color) do
-    [last1 | last2] = game.last2Moved[color]
+    [last1 | _last2] = game.last2Moved[color]
     game |> Map.put(:last2Moved, game.last2Moved |> Map.put(color, [i, last1]))
   end
 
@@ -214,7 +252,7 @@ defmodule Aeroplane.Game do
 
     cond do
       color == :y ->
-        if currLocation > 20 && tempLocation < 20 do
+        if currLocation > 65 && tempLocation < 26 do
             currLocation + game.currDie  - 1
         else
             tempLocation
@@ -303,16 +341,12 @@ defmodule Aeroplane.Game do
   #if end up on other piece, send that piece back to camp
   #TODO: didn't test
   def pieceFight(game, newLocation, i, color) do
-    IO.puts(newLocation)
-    IO.puts(color)
     location = game.pieceLocation
     previousLoc = List.flatten([location[:y] | [location[:b] | [location[:r] | location[:g]]]])
     |>List.replace_at(i, -1)
     if Enum.member?(previousLoc, newLocation) do
       prevI = Enum.find_index(previousLoc, fn x -> x == newLocation end)
-      prevColor = game.player|>Enum.find(fn {k, v} -> v == div(prevI, 4) end)|>elem(0)
-      IO.puts(prevI)
-      IO.puts(prevColor)
+      prevColor = game.player|>Enum.find(fn {_k, v} -> v == div(prevI, 4) end)|>elem(0)
       if prevColor != color do
         cond do
           prevI <= 3 ->
@@ -378,7 +412,7 @@ defmodule Aeroplane.Game do
        |>bridge(color, s + 1, e)
   end
 
-  def bridge(map, color, s, e) when s > e do
+  def bridge(map, _color, s, e) when s > e do
     map
   end
 
@@ -406,19 +440,19 @@ defmodule Aeroplane.Game do
   ###########normal square################
   def normal_square(map) do
     map
-    |>continuousSquare_helper(22, 19, 196, 426, -1, :v, normal_interval)
-    |>continuousSquare_helper(71, 69, 196, 548, -1, :v, normal_interval)
-    |>continuousSquare_helper(44, 49, 817, 426, 1, :v, normal_interval)
-    |>continuousSquare_helper(29, 27, 360, 256, -1, :v, normal_interval)
-    |>continuousSquare_helper(64, 62, 360, 715, -1, :v, normal_interval)
-    |>continuousSquare_helper(37, 39, 654, 256, 1, :v, normal_interval)
-    |>continuousSquare_helper(54, 56, 654, 715, 1, :v, normal_interval)
-    |>continuousSquare_helper(31, 36, 423, 198, 1, :h, normal_interval)
-    |>continuousSquare_helper(61, 56, 423, 817, -1, :h, normal_interval)
-    |>continuousSquare_helper(24, 26, 256, 362, 1, :h, normal_interval)
-    |>continuousSquare_helper(41, 43, 716, 362, 1, :h, normal_interval)
-    |>continuousSquare_helper(68, 66, 256, 652, -1, :h, normal_interval)
-    |>continuousSquare_helper(51, 49, 716, 651, -1, :h, normal_interval)
+    |>continuousSquare_helper(22, 19, 196, 426, -1, :v, normal_interval())
+    |>continuousSquare_helper(71, 69, 196, 548, -1, :v, normal_interval())
+    |>continuousSquare_helper(44, 49, 817, 426, 1, :v, normal_interval())
+    |>continuousSquare_helper(29, 27, 360, 256, -1, :v, normal_interval())
+    |>continuousSquare_helper(64, 62, 360, 715, -1, :v, normal_interval())
+    |>continuousSquare_helper(37, 39, 654, 256, 1, :v, normal_interval())
+    |>continuousSquare_helper(54, 56, 654, 715, 1, :v, normal_interval())
+    |>continuousSquare_helper(31, 36, 423, 198, 1, :h, normal_interval())
+    |>continuousSquare_helper(61, 56, 423, 817, -1, :h, normal_interval())
+    |>continuousSquare_helper(24, 26, 256, 362, 1, :h, normal_interval())
+    |>continuousSquare_helper(41, 43, 716, 362, 1, :h, normal_interval())
+    |>continuousSquare_helper(68, 66, 256, 652, -1, :h, normal_interval())
+    |>continuousSquare_helper(51, 49, 716, 651, -1, :h, normal_interval())
   end
 
   def normal_interval do
@@ -435,16 +469,16 @@ defmodule Aeroplane.Game do
 
   def triangles_v(map,s, acc1, acc2, s_x, s_y) do
     map
-    |>continuousSquare_helper(s, s+2*acc1, s_x, s_y, acc1, :h, tra_inter_small)
-    |>continuousSquare_helper(s+acc2, s + acc2 + 2*acc1, s_x + tra_inter_big, s_y, acc1, :h, tra_inter_small)
+    |>continuousSquare_helper(s, s+2*acc1, s_x, s_y, acc1, :h, tra_inter_small())
+    |>continuousSquare_helper(s+acc2, s + acc2 + 2*acc1, s_x + tra_inter_big(), s_y, acc1, :h, tra_inter_small())
   end
 
   def triangles_h(map) do
     map
-    |>continuousSquare_helper(30, 24, 379, 212, -3, :v, tra_inter_small)
-    |>continuousSquare_helper(65, 59, 379, 212 + tra_inter_big, -3, :v, tra_inter_small)
-    |>continuousSquare_helper(36, 42, 635, 212, 3, :v, tra_inter_small)
-    |>continuousSquare_helper(53, 59, 635, 212 + tra_inter_big, 3, :v, tra_inter_small)
+    |>continuousSquare_helper(30, 24, 379, 212, -3, :v, tra_inter_small())
+    |>continuousSquare_helper(65, 59, 379, 212 + tra_inter_big(), -3, :v, tra_inter_small())
+    |>continuousSquare_helper(36, 42, 635, 212, 3, :v, tra_inter_small())
+    |>continuousSquare_helper(53, 59, 635, 212 + tra_inter_big(), 3, :v, tra_inter_small())
   end
 
 
@@ -461,10 +495,10 @@ defmodule Aeroplane.Game do
   end
 
   def bridge_coor(map) do
-    map|>continuousSquare_helper(72, 78, 256, 507, 1, :h, bridge_interval)
-    |>continuousSquare_helper(89, 83, 550, 507, -1, :h, bridge_interval)
-    |>continuousSquare_helper(78, 84, 507, 256, 1, :v, bridge_interval)
-    |>continuousSquare_helper(95, 89, 507, 550, -1, :v, bridge_interval)
+    map|>continuousSquare_helper(72, 78, 256, 507, 1, :h, bridge_interval())
+    |>continuousSquare_helper(89, 83, 550, 507, -1, :h, bridge_interval())
+    |>continuousSquare_helper(78, 84, 507, 256, 1, :v, bridge_interval())
+    |>continuousSquare_helper(95, 89, 507, 550, -1, :v, bridge_interval())
   end
 
   def continuousSquare_helper(map, s, e, s_x, s_y, acc, direction, interval) when s != e do
@@ -477,7 +511,7 @@ defmodule Aeroplane.Game do
     end
   end
 
-  def continuousSquare_helper(map, s, e, s_x, s_y, acc, direction, interval) when s == e do
+  def continuousSquare_helper(map, s, e, _s_x, _s_y, _acc, _direction, _interval) when s == e do
     map
   end
   ###########start###############
@@ -502,16 +536,16 @@ defmodule Aeroplane.Game do
 
 
   def camp_coor_color(map, s, sx, sy) do
-    map|>Map.put(s, %{x: sx, y: sy}) |>Map.put(s + 1, %{x: sx + camp_interval_small, y: sy})
-    |>Map.put(s + 2, %{x: sx, y: sy + camp_interval_small})
-    |> Map.put(s + 3, %{x: sx + camp_interval_small, y: sy + camp_interval_small})
+    map|>Map.put(s, %{x: sx, y: sy}) |>Map.put(s + 1, %{x: sx + camp_interval_small(), y: sy})
+    |>Map.put(s + 2, %{x: sx, y: sy + camp_interval_small()})
+    |> Map.put(s + 3, %{x: sx + camp_interval_small(), y: sy + camp_interval_small()})
   end
 
   def camp_coor(map) do
-    map|>camp_coor_color(0, camp_coor_s, camp_coor_s)
-    |>camp_coor_color(5, camp_coor_s + camp_interval_big, camp_coor_s)
-    |>camp_coor_color(15, camp_coor_s, camp_coor_s + camp_interval_big)
-    |>camp_coor_color(10, camp_coor_s + camp_interval_big, camp_coor_s + camp_interval_big)
+    map|>camp_coor_color(0, camp_coor_s(), camp_coor_s())
+    |>camp_coor_color(5, camp_coor_s() + camp_interval_big(), camp_coor_s())
+    |>camp_coor_color(15, camp_coor_s(), camp_coor_s() + camp_interval_big())
+    |>camp_coor_color(10, camp_coor_s() + camp_interval_big(), camp_coor_s() + camp_interval_big())
   end
 
   ######################################################################################
