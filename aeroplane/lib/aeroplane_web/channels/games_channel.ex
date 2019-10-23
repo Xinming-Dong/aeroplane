@@ -44,7 +44,6 @@ defmodule AeroplaneWeb.GamesChannel do
     end
 
     def handle_in("on_click_die", %{}, socket) do
-      IO.inspect socket
       name = socket.assigns[:name]
       user = socket.assigns[:user]
       game = GameServer.on_click_die(name, user)
@@ -52,7 +51,16 @@ defmodule AeroplaneWeb.GamesChannel do
       {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
     end
 
+    def handel_in("on_click_join", %{}, socket) do
+      name = socket.assigns[:name]
+      user = socket.assigns[:user]
+      game = GameServer.on_click_join(name, user)
+      broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
+      {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
+    end
+
     def handle_info({:update, game}, socket) do
+      user = socket.assigns[:user]
       broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
       {:noreply, socket}
     end
