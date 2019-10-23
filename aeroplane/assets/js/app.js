@@ -23,7 +23,7 @@ import aeroplane_init from "./aeroplane";
 $(() => {
     let root = document.getElementById('root');
     if (root) {
-        let channel = socket.channel("games:" + window.gameName, {});
+        let channel = socket.channel("games:" + window.gameName, window.userName, {});
         aeroplane_init(root, channel);
     }
   });

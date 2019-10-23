@@ -4,18 +4,17 @@
     <h1 class="join">Join a Game</h1>
 
     <%= form_for @conn, "/game", fn f-> %>
-      <label class="join">Game Name</label>
+      <label class="join">Tavle Name</label>
       <label> 
-        <%=text_input f, :name, [class: "input_name"] %> 
+        <%=text_input f, :name, [class: "input_name"]%> 
+      </label>
+      <label class="join">Player Name</label>
+      <label> 
+        <%=text_input f, :user, [class: "input_name"]%> 
       </label>
       <p>
-        <button class="join_btn" onclick="get_name()">Join</button>
+        <%= submit "Join", [class: "join_btn"]%>
       </p>
-      <script type="text/javascript">
-      function get_name(){
-        input = document.getElementById("game_name").value;
-      }
-      </script>
     <% end%>
   </div>
 </div>
