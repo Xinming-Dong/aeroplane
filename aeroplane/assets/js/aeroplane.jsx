@@ -13,6 +13,7 @@ let W = 1024;
 let H = 1024;
 let R = 20;
 let buttons_clickable = true;
+let last_player = "yellow";
 
 class Aeroplane extends React.Component {
   constructor(props) {
@@ -41,6 +42,8 @@ class Aeroplane extends React.Component {
   }
 
   on_click_die() {
+    last_player = this.state.curr_player;
+    console.log("previous state: " + this.state.curr_player);
     if (buttons_clickable) {
       this.channel.push("on_click_die", {})
                 .receive("ok", this.got_view_die.bind(this));
@@ -48,38 +51,43 @@ class Aeroplane extends React.Component {
   }
 
   on_click_piece(ii) {
-    if (buttons_clickable) {
+    let piece_clickable = false;
+    let player = this.state.curr_player;
+    if (ii < 4 && player == "yellow") {
+      piece_clickable = true;
+    }
+    else if ((ii >= 4 && ii < 8) && player == "blue") {
+      piece_clickable = true;
+    }
+    else if ((ii >= 8 && ii < 12) && player == "red") {
+      piece_clickable = true;
+    }
+    else if (ii >= 12 && player == "green") {
+      piece_clickable = true;
+    }
+
+    if (buttons_clickable && piece_clickable) {
       this.channel.push("on_click_piece", { index: ii })
                 .receive("ok", this.got_view.bind(this));
     }
   }
 
   got_view_die(view) {
-    console.log("previous state: " + this.state.curr_player);
+    // console.log("previous state: " + this.state.curr_player);
     buttons_clickable = false;
     this.setState({
       pieces_loc: view.game.pieces_loc,
       die: view.game.die,
+      curr_player: last_player,
     });
     
     setTimeout(
       function() {
         console.log("state.player: " + this.state.curr_player);
         console.log("view.game.player: " + view.game.curr_player);
-        if(this.state.curr_player == view.game.curr_player) {
-          console.log("same");
-          console.log("set " + this.state.curr_player);
-          this.setState({
-            curr_player: this.state.curr_player,
-          });
-        }
-        else {
-          console.log("different");
-          console.log("set " + view.game.curr_player);
-          this.setState({
-            curr_player: view.game.curr_player,
-          });
-        }
+        this.setState({
+              curr_player: view.game.curr_player,
+        });
         buttons_clickable = true;
       }.bind(this), 800);
   }
