@@ -20,7 +20,6 @@ defmodule Aeroplane.Game do
      }
   end
 
-  # TODO
   def client_view(game, user) do
     %{
       die: game.currDie,
@@ -101,6 +100,8 @@ defmodule Aeroplane.Game do
   end
 
 
+
+
   #actions after user clicked a piece
   def clickPiece(game, i, userName) do
     userID = game.user[userName]
@@ -148,6 +149,9 @@ defmodule Aeroplane.Game do
 
 
   ####################Helper functions####################################
+
+
+
 
   def getColor(i) do
     cond do
@@ -202,11 +206,14 @@ defmodule Aeroplane.Game do
 
 
   # change to next player in player list.
-  # TODO: player number is currently hardcoded
   def switchPlayer(game) do
-    next = rem(game.player[game.currPlayer] + 1, 4)
+    playerCount = game.user|>Enum.filter(fn {_name, id} -> id < 4 end)|>Enum.count()
+    next = rem(game.player[game.currPlayer] + 1, playerCount)
     game.player|>Enum.find(fn {_k, v} -> v == next end)|>elem(0)
   end
+
+
+
 
 
 
