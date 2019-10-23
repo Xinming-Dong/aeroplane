@@ -17,7 +17,7 @@ defmodule AeroplaneWeb.GamesChannel do
         socket = socket
         |> assign(:name, name)
         |> assign(:user, payload)
-        {:ok, %{"join" => name, "game" => Game.client_view(game)}, socket}
+        {:ok, %{"join" => name, "game" => Game.client_view(game, payload)}, socket}
       else
         {:error, %{reason: "unauthorized"}}
       end
@@ -29,17 +29,17 @@ defmodule AeroplaneWeb.GamesChannel do
         game = GameServer.on_click_piece(name, user, ii)
         case game do
           [st1, st2, st3] ->
-            broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
+            broadcast!(socket, "update", %{ "game" => Game.client_view(st1, user) })
             Process.send_after(self(), {:update, st2}, 800)
             Process.send_after(self(), {:update, st3}, 1600)
-            {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
+            {:reply, {:ok, %{ "game" => Game.client_view(st1, user)}}, socket}
           [st1, st2] ->
-            broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
+            broadcast!(socket, "update", %{ "game" => Game.client_view(st1, user) })
             Process.send_after(self(), {:update, st2}, 800)
-            {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
+            {:reply, {:ok, %{ "game" => Game.client_view(st1, user)}}, socket}
           st1 ->
-            broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
-            {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
+            broadcast!(socket, "update", %{ "game" => Game.client_view(st1, user) })
+            {:reply, {:ok, %{ "game" => Game.client_view(st1, user)}}, socket}
         end
     end
 
@@ -48,12 +48,12 @@ defmodule AeroplaneWeb.GamesChannel do
       name = socket.assigns[:name]
       user = socket.assigns[:user]
       game = GameServer.on_click_die(name, user)
-      broadcast!(socket, "update", %{ "game" => Game.client_view(game) })
-      {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
+      broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
+      {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
     end
 
     def handle_info({:update, game}, socket) do
-      broadcast!(socket, "update", %{ "game" => Game.client_view(game) })
+      broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
       {:noreply, socket}
     end
 
