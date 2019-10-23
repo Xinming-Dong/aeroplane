@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Stage, Layer, Circle, Image, Text } from 'react-konva';
+import { Stage, Layer, Circle, Image, Text, Label } from 'react-konva';
 import _ from "lodash";
 
 export default function aeroplane_init(root, channel) {
@@ -25,6 +25,10 @@ class Aeroplane extends React.Component {
       pieces_loc: [],
       die: 0,
       curr_player: "",
+
+      game_active: 0,
+      can_start: 0,
+      user_name: "",
     };
 
     this.channel
@@ -39,6 +43,26 @@ class Aeroplane extends React.Component {
   got_view(view) {
     console.log(view.game.pieces_loc);
     this.setState(view.game);
+  }
+
+  got_view_die(view) {
+    // console.log("previous state: " + this.state.curr_player);
+    buttons_clickable = false;
+    this.setState({
+      pieces_loc: view.game.pieces_loc,
+      die: view.game.die,
+      curr_player: last_player,
+    });
+    
+    setTimeout(
+      function() {
+        console.log("state.player: " + this.state.curr_player);
+        console.log("view.game.player: " + view.game.curr_player);
+        this.setState({
+              curr_player: view.game.curr_player,
+        });
+        buttons_clickable = true;
+      }.bind(this), 800);
   }
 
   on_click_die() {
@@ -72,24 +96,14 @@ class Aeroplane extends React.Component {
     }
   }
 
-  got_view_die(view) {
-    // console.log("previous state: " + this.state.curr_player);
-    buttons_clickable = false;
-    this.setState({
-      pieces_loc: view.game.pieces_loc,
-      die: view.game.die,
-      curr_player: last_player,
-    });
-    
-    setTimeout(
-      function() {
-        console.log("state.player: " + this.state.curr_player);
-        console.log("view.game.player: " + view.game.curr_player);
-        this.setState({
-              curr_player: view.game.curr_player,
-        });
-        buttons_clickable = true;
-      }.bind(this), 800);
+  on_click_join() {
+    this.channel.push("on_click_join", {})
+                .receive("ok", this.got_view.bind(this));
+  }
+
+  on_click_start() {
+    this.channel.push("on_click_start", {})
+                .receive("ok", this.got_view.bind(this));
   }
 
   render() {
@@ -118,6 +132,8 @@ class Aeroplane extends React.Component {
               <Die number={this.state.die} player={this.state.curr_player} on_click_die={this.on_click_die.bind(this)}/>
               {pieces}
               <CurrPlayer player={this.state.curr_player} />
+              <JoinButton on_click_join={this.on_click_join.bind(this)}/>
+              <StartButton on_click_start={this.on_click_start.bind(this)}/>
             </Layer>
           </Stage>
         </div>
@@ -154,4 +170,22 @@ function Die(params) {
 function CurrPlayer(params) {
   let {player} = params;
   return <Text class="signal" fontSize={30} fontFamily={"Comic Sans MS"} text={"current player: " + player} x={380} y={70} />
+}
+
+function JoinButton(params) {
+  let {on_click_join} = params
+  let join = <button onClick={on_click_join}>Join Game</button>
+  if (game_active == 0) {
+    return <Label x={700} y={500} >{join}</Label>
+  }
+  return <Label x={700} y={500} ></Label>
+}
+
+function StartButton(params) {
+  let {on_click_start} = params
+  let start = <button onClick={on_click_start}>Start</button>
+  if (can_start == 1) {
+    return <Label x={700} y={400} >{start}</Label>
+  }
+  return <Label x={700} y={400} ></Label>
 }

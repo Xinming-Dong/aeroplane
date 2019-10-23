@@ -61,4 +61,24 @@ defmodule Aeroplane.GameServer do
     def on_click_piece(name, user, index) do
         GenServer.call(reg(name), {:on_click_piece, name, user, index})
     end
+
+    def handle_call({:on_click_join, name, user}, _from, game) do
+        game = Aeroplane.Game.join(game, user)
+        Aeroplane.BackupAgent.put(name, game)
+        {:reply, game, game}
+    end
+
+    def on_click_join(name, user) do
+        GenServer.call(reg(name), {:on_click_join, name, user})
+    end
+
+    def handle_call({:on_click_start, name, user}, _from, game) do
+        game = Aeroplane.Game.start(game, user)
+        Aeroplane.BackupAgent.put(name, game)
+        {:reply, game, game}
+    end
+
+    def on_clic_start(name, user) do
+        GenServer.call(reg(name), {:on_click_start, name, user})
+    end
 end
