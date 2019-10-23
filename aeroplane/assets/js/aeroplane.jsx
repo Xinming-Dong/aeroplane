@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Stage, Layer, Circle, Image, Text, Label } from 'react-konva';
+import { Stage, Layer, Circle, Image, Text, Label, Tag} from 'react-konva';
 import _ from "lodash";
 
 export default function aeroplane_init(root, channel) {
@@ -52,6 +52,10 @@ class Aeroplane extends React.Component {
       pieces_loc: view.game.pieces_loc,
       die: view.game.die,
       curr_player: last_player,
+
+      game_active: view.game.game_active,
+      can_start: view.game.can_start,
+      user_name: view.game.user_name,
     });
     
     setTimeout(
@@ -132,8 +136,8 @@ class Aeroplane extends React.Component {
               <Die number={this.state.die} player={this.state.curr_player} on_click_die={this.on_click_die.bind(this)}/>
               {pieces}
               <CurrPlayer player={this.state.curr_player} />
-              <JoinButton on_click_join={this.on_click_join.bind(this)}/>
-              <StartButton on_click_start={this.on_click_start.bind(this)}/>
+              <JoinButton game_active={this.state.game_active} on_click_join={this.on_click_join.bind(this)}/>
+              <StartButton can_start={this.state.can_start} on_click_start={this.on_click_start.bind(this)}/>
             </Layer>
           </Stage>
         </div>
@@ -173,19 +177,26 @@ function CurrPlayer(params) {
 }
 
 function JoinButton(params) {
-  let {on_click_join} = params
-  let join = <button onClick={on_click_join}>Join Game</button>
+  let {game_active, on_click_join} = params
+  let join = <Text text={"Join Game"} fontSize={20} fontFamily={"Comic Sans MS"} padding={10}/>
   if (game_active == 0) {
-    return <Label x={700} y={500} >{join}</Label>
+    return (<Label x={880} y={500} opacity={0.75}>
+              <Tag onClick={on_click_join} fill={"yellow"} stroke={"black"}/>
+              {join}
+            </Label>);
   }
-  return <Label x={700} y={500} ></Label>
+  return <Label x={900} y={500} ></Label>
 }
 
 function StartButton(params) {
-  let {on_click_start} = params
-  let start = <button onClick={on_click_start}>Start</button>
+  let {can_start, on_click_start} = params
+  let start = <Text test={"Start"} fontSize={20} fontFamily={"Comic Sans MS"} padding={10}/>
   if (can_start == 1) {
-    return <Label x={700} y={400} >{start}</Label>
+    return (<Label x={880} y={400} opacity={0.75}>
+              <Tag onClick={on_click_start} fill={yellow} stroke={"black"}/>
+              {start}
+            </Label>);
+    
   }
-  return <Label x={700} y={400} ></Label>
+  return <Label x={900} y={400} ></Label>
 }
