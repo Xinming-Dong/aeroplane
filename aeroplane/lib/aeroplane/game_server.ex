@@ -32,23 +32,33 @@ defmodule Aeroplane.GameServer do
         {:ok, game}
     end
 
-    def handle_call({:on_click_die, name}, _from, game) do
-        game = Aeroplane.Game.clickDie(game)
+    def handle_call({:add, name, user}, _from, game) do
+        game = Aeroplane.Game.add(game, user)
         Aeroplane.BackupAgent.put(name, game)
         {:reply, game, game}
     end
 
-    def on_click_die(name) do
-        GenServer.call(reg(name), {:on_click_die, name})
+    def add(name, user) do
+        GenServer.call(reg(name), {:add, name, user})
     end
 
-    def handle_call({:on_click_piece, name, index}, _from, game) do
-        game = Aeroplane.Game.clickPiece(game, index)
+    def handle_call({:on_click_die, name, user}, _from, game) do
+        game = Aeroplane.Game.clickDie(game, user)
+        Aeroplane.BackupAgent.put(name, game)
+        {:reply, game, game}
+    end
+
+    def on_click_die(name, user) do
+        GenServer.call(reg(name), {:on_click_die, name, user})
+    end
+
+    def handle_call({:on_click_piece, name, user, index}, _from, game) do
+        game = Aeroplane.Game.clickPiece(game, index, user)
         Aeroplane.BackupAgent.put(name, game|>Enum.at(-1))
         {:reply, game, game|>Enum.at(-1)}
     end
 
-    def on_click_piece(name, index) do
-        GenServer.call(reg(name), {:on_click_piece, name, index})
+    def on_click_piece(name, user, index) do
+        GenServer.call(reg(name), {:on_click_piece, name, user, index})
     end
 end
