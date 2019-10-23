@@ -78,7 +78,7 @@ defmodule Aeroplane.GameServer do
         {:reply, game, game}
     end
 
-    def on_clic_start(name, user) do
+    def on_click_start(name, user) do
         GenServer.call(reg(name), {:on_click_start, name, user})
     end
 end

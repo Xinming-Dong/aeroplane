@@ -28,6 +28,12 @@ defmodule AeroplaneWeb.GamesChannel do
         user = socket.assigns[:user]
         game = GameServer.on_click_piece(name, user, ii)
         case game do
+          [st1, st2, st3, st4] ->
+            broadcast!(socket, "update", %{ "game" => Game.client_view(st1, user) })
+            Process.send_after(self(), {:update, st2}, 500)
+            Process.send_after(self(), {:update, st3}, 1000)
+            Process.send_after(self(), {:update, st4}, 1500)
+            {:reply, {:ok, %{ "game" => Game.client_view(st1, user)}}, socket}
           [st1, st2, st3] ->
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1, user) })
             Process.send_after(self(), {:update, st2}, 800)

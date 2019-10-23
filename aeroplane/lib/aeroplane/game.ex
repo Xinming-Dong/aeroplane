@@ -13,20 +13,163 @@ defmodule Aeroplane.Game do
       currDie: 0,
       moveablePieces: [:y],
       dieActive: 1,
-      winner: ""
+      winner: "",
+      user: %{},
+      gameActive: 0,
+      canStart: 0,
      }
   end
 
-
   # TODO
-  def client_view(game) do
+  def client_view(game, user) do
     %{
       die: game.currDie,
       pieces_loc: pieceLocToCoor(game.pieceLocation, board_coor()),
       curr_player: getCurrPlayer(game.currPlayer),
-      winner: game.winner
+      winner: game.winner,
+      game_active: game.gameActive,
+      can_start: game.canStart,
+      user_name: user,
     }
   end
+
+
+  #user add to the game room
+  def add(game, userName) do
+    if Map.has_key?(game.user, userName) do
+      game
+    else
+      id = (game.user|>Enum.filter(fn {_name, id} -> id > 3 end)|>Enum.count()) + 4
+      game|>Map.put(:user, game.user|>Map.put(userName, id))
+    end
+
+  end
+
+  #user join the game, if more than 1 player joined, the game can start
+  def join(game, userName) do
+    currPlayerCount = game.user|>Enum.filter(fn {_name, id} -> id < 4 end) |>Enum.count()
+    if currPlayerCount == 4 do
+      game
+    else
+      game = game|>Map.put(:user, game.user|>Map.put(userName, currPlayerCount))
+      if currPlayerCount >= 1 do
+        game|>Map.put(:canStart, 1)
+      else
+        game
+      end
+    end
+  end
+
+
+  #the first joined player can start the game
+  def start(game, user) do
+    if game.user[user] == 0 do
+      game|>Map.put(:gameActive, 1)
+    else
+      game
+    end
+  end
+
+  #actions after clicked the die
+  def clickDie(game, userName) do
+    userID = game.user[userName]
+    userColor = game.player|>Enum.find(fn {_k, v} -> v == userID end)|>elem(0)
+    if game.gameActive == 0 || userColor != game.currPlayer do
+      game
+    else
+      clickDieAction(game)
+    end
+  end
+
+  def clickDieAction(game) do
+    game = if game.dieActive == 0 do
+      game
+    else
+      newDieNum = randomDieNum(game);
+      game
+      |>Map.put(:currDie, newDieNum)
+      |>handleNextPlayer(newDieNum)
+      |>changeMoveablePiece(newDieNum)
+      |>changeLastRollList(newDieNum)
+    end
+    if Enum.count(game.moveablePieces) <= 1 do
+      game |>Map.put(:currPlayer, game.nextPlayer)
+      |>Map.put(:dieActive, 1)
+    else
+      game|>Map.put(:dieActive, 0)
+    end
+  end
+
+
+  #actions after user clicked a piece
+  def clickPiece(game, i, userName) do
+    userID = game.user[userName]
+    userColor = game.player|>Enum.find(fn {_k, v} -> v == userID end)|>elem(0)
+    if game.gameActive == 0 || userColor != game.currPlayer do
+      game
+    else
+      iColor = getColor(i)
+      i = i - game.player[iColor] * 4
+      if !moveable(game, i, iColor) do
+        [game]
+      else
+        st1 = game
+        |>moveClickedPiece(i, iColor)
+        st2 = st1
+        |>jumpClickedPiece(i, iColor)
+        st3 = st2
+        |> moreJump(i, iColor)
+        cond do
+          st1 == st2 && st2 == st3 ->
+            st4 = st1|>pieceFight(i, iColor)
+            if st1 == st4 do
+              [st1|>afterMovePiece(i, iColor)]
+            else
+              [st1, st4|>afterMovePiece(i, iColor)]
+            end
+          st1 != st2 && st2 == st3 ->
+            st4 = st2 |>pieceFight(i, iColor)
+            if st2 == st4 do
+              [st1, st2|>afterMovePiece(i, iColor)]
+            else
+              [st1, st2, st4|>afterMovePiece(i, iColor)]
+            end
+          st1 != st2 && st2 != st3 ->
+            st4 = st3|>pieceFight(i, iColor)
+            if st3 == st4 do
+              [st1, st2, st3|>afterMovePiece(i, iColor)]
+            else
+              [st1, st2, st3, st4|>afterMovePiece(i, iColor)]
+            end
+        end
+      end
+    end
+  end
+
+
+  ####################Helper functions####################################
+
+  def getColor(i) do
+    cond do
+      0 <= i && i <= 3 ->
+        :y
+      4<=i && i<= 7 ->
+        :b
+      8<=i && i<=11 ->
+        :r
+      12<=i && i<= 15 ->
+        :g
+    end
+  end
+
+  def randomDieNum(game) do
+    if piecesNotInCamp(game)|>Enum.count() == 0 do
+      Enum.random([1,2,3,4,5,6,6,6])
+    else
+      :rand.uniform(6)
+    end
+  end
+
 
   def getCurrPlayer(player) do
     cond do
@@ -46,33 +189,7 @@ defmodule Aeroplane.Game do
     |>Enum.map(fn x -> coor[x] end)
   end
 
-  ##################clickDie########################
-  def clickDie(game) do
-    game = if game.dieActive == 0 do
-      game
-    else
-      newDieNum = randomDieNum(game);
-      game
-      |>Map.put(:currDie, newDieNum)
-      |>handleNextPlayer(newDieNum)
-      |>changeMoveablePiece(newDieNum)
-      |>changeLastRollList(newDieNum)
-    end
-    if Enum.count(game.moveablePieces) <= 1 do
-      game |>Map.put(:currPlayer, game.nextPlayer)
-      |>Map.put(:dieActive, 1)
-    else
-      game|>Map.put(:dieActive, 0)
-    end
-  end
-
-  def randomDieNum(game) do
-    if piecesNotInCamp(game)|>Enum.count() == 0 do
-      Enum.random([1,2,3,4,5,6,6,6])
-    else
-      :rand.uniform(6)
-    end
-  end
+  ##################clickDie Helper#########################################
 
   #change next Player
   def handleNextPlayer(game,roll) do
@@ -149,51 +266,18 @@ defmodule Aeroplane.Game do
   # return the ID of all pieces that are not in camp for current player
   def piecesNotInCamp(game) do
     campStart = game.player[game.currPlayer] * 5
-    result = game.pieceLocation[game.currPlayer]|> Enum.filter(fn x -> x > campStart + 3 end)
-    |> Enum.map(fn x -> Enum.find_index(game.pieceLocation[game.currPlayer], fn y -> y == x end) end)
-    result
+    game.pieceLocation[game.currPlayer]|> find_indexes(fn(x) -> x > campStart + 3 end)
   end
 
-  ###############clickPiece#########################################
-
-  def clickPiece(game, i) do
-    iColor = cond do
-      0 <= i && i <= 3 ->
-        :y
-      4<=i && i<= 7 ->
-        :b
-      8<=i && i<=11 ->
-        :r
-      12<=i && i<= 15 ->
-        :g
-    end
-    i = i - game.player[iColor] * 4
-    if !moveable(game, i, iColor) do
-      game
-    else
-      st1 = game
-      |>moveClickedPiece(i, iColor)
-      st2 = st1
-      |>jumpClickedPiece(i, iColor)
-      st3 = st2
-      |> moreJump(i, iColor)
-      cond do
-        st1 == st2 && st2 == st3 ->
-          [st1|> afterMovePiece(i, iColor)]
-        st1 != st2 && st2 == st3 ->
-          st2 = st2 |>afterMovePiece(i, iColor)
-          [st1, st2]
-        st1 != st2 && st2 != st3 ->
-          st3 = st3|>afterMovePiece(i, iColor)
-          [st1, st2, st3]
-      end
-    end
+  def find_indexes(list, function) do
+    Enum.with_index(list) |>Enum.filter(fn({x, _y}) -> function.(x) end)|> Enum.map(fn {_k, v} -> v end)
   end
+
+  ###############clickPiece Helper#########################################
 
   def afterMovePiece(game, i, iColor) do
     IO.puts("here")
     game = game
-    |>pieceFight(i, iColor)
     |>storeLastMove(i, iColor)
     |>resetMoveable()
     |>changePlayer()
@@ -255,8 +339,7 @@ defmodule Aeroplane.Game do
       true ->
         moveWithinBoundary(game, color, currLocation)
     end
-    newLocationList = game.pieceLocation[color] |> List.replace_at(i, newLocation)
-    game |> Map.put(:pieceLocation, game.pieceLocation |> Map.put(color, newLocationList))
+    game |>updatePieceLocation(color, i, newLocation)
   end
 
 
@@ -318,8 +401,7 @@ defmodule Aeroplane.Game do
       true ->
         currLocation
     end
-    game |>Map.put(:pieceLocation, game.pieceLocation
-    |> Map.put(color, game.pieceLocation[color] |> List.replace_at(i, newLocation)))
+    game|> updatePieceLocation(color, i, newLocation)
   end
 
   #jump the second time when land on big jump after first jump.
@@ -335,8 +417,7 @@ defmodule Aeroplane.Game do
     else
       loc
     end
-    game |>Map.put(:pieceLocation, game.pieceLocation
-    |> Map.put(color, game.pieceLocation[color] |> List.replace_at(i, newLoc)))
+    game|>updatePieceLocation(color, i, newLoc)
   end
 
   #check if clicked piece is moveable
@@ -356,34 +437,41 @@ defmodule Aeroplane.Game do
 
 
   #if end up on other piece, send that piece back to camp
-  #TODO: didn't test
+  #i is 0,1,2 or 3, color is i's color, i represents clicked piece
   def pieceFight(game, i, color) do
-    newLocation = game.pieceLocation[color]|>Enum.at(i)
-    location = game.pieceLocation
-    previousLoc = List.flatten([location[:y] | [location[:b] | [location[:r] | location[:g]]]])
-    |>List.replace_at(i, -1)
-    if Enum.member?(previousLoc, newLocation) do
-      prevI = Enum.find_index(previousLoc, fn x -> x == newLocation end)
-      prevColor = game.player|>Enum.find(fn {_k, v} -> v == div(prevI, 4) end)|>elem(0)
-      if prevColor != color do
-        cond do
-          prevI <= 3 ->
-            game|>Map.put(:pieceLocation, game.pieceLocation |> Map.put(:y, game.pieceLocation[:y]|>List.replace_at(prevI, prevI)))
-          prevI <= 7 ->
-            game|>Map.put(:pieceLocation, game.pieceLocation |> Map.put(:b, game.pieceLocation[:b]|>List.replace_at(prevI - 4, prevI + 1)))
-          prevI <= 11 ->
-            game|>Map.put(:pieceLocation, game.pieceLocation |> Map.put(:r, game.pieceLocation[:r]|>List.replace_at(prevI - 8, prevI + 2)))
-          prevI <= 15 ->
-            game|>Map.put(:pieceLocation, game.pieceLocation |> Map.put(:g, game.pieceLocation[:g]|>List.replace_at(prevI - 12, prevI + 3)))
-        end
-      else
-        game
-      end
-    else
+    iLoc = game.pieceLocation[color]|>Enum.at(i)
+    currPiece = game.pieceLocation
+    |> Map.put(color, game.pieceLocation[color]|>List.replace_at(i, -1))
+    |> Enum.filter(fn {_color, locs} -> Enum.member?(locs, iLoc) end)
+    |> Enum.flat_map(fn {k, v} -> [k, v] end)
+
+    if Enum.count(currPiece) == 0 do
       game
+    else
+      [preColor, prevLocList] = currPiece
+      if preColor == color do
+        game
+      else
+        prevIdList = Enum.with_index(prevLocList)|>Enum.filter(fn {loc, _id} -> loc == iLoc end)|>Enum.map(fn {_loc, id} -> id end)
+        sendHome(game, preColor, prevIdList, Enum.count(prevIdList) - 1)
+      end
     end
   end
 
+  def sendHome(game, color, idList, c) when c >= 0 do
+    i = idList|>Enum.at(c)
+    game|>updatePieceLocation(color, i, i + game.player[color] * 5)
+    |>sendHome(color, idList, c - 1)
+  end
+
+  def sendHome(game, _color, _idList, c) when c < 0 do
+    game
+  end
+
+
+  def updatePieceLocation(game, color, i, newLoc) do
+    game|>Map.put(:pieceLocation, game.pieceLocation |> Map.put(color, game.pieceLocation[color]|>List.replace_at(i, newLoc)))
+  end
   ####################### create board with attributes################################
   def board_init do
     #camp+start(type 0 and 1)
