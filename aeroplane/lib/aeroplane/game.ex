@@ -179,7 +179,7 @@ defmodule Aeroplane.Game do
       |> moreJump(i, iColor)
       cond do
         st1 == st2 && st2 == st3 ->
-          st1|> afterMovePiece(i, iColor)
+          [st1|> afterMovePiece(i, iColor)]
         st1 != st2 && st2 == st3 ->
           st2 = st2 |>afterMovePiece(i, iColor)
           [st1, st2]

@@ -44,8 +44,8 @@ defmodule Aeroplane.GameServer do
 
     def handle_call({:on_click_piece, name, index}, _from, game) do
         game = Aeroplane.Game.clickPiece(game, index)
-        Aeroplane.BackupAgent.put(name, game)
-        {:reply, game, game}
+        Aeroplane.BackupAgent.put(name, game|>Enum.at(-1))
+        {:reply, game, game|>Enum.at(-1)}
     end
 
     def on_click_piece(name, index) do

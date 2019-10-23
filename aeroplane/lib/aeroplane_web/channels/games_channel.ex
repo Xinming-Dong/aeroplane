@@ -19,20 +19,21 @@ defmodule AeroplaneWeb.GamesChannel do
 
     def handle_in("on_click_piece", %{"index" => ii}, socket) do
         name = socket.assigns[:name]
-        case GameServer.on_click_piece(name, ii) do
+        game = GameServer.on_click_piece(name, ii)
+        case game do
           [st1, st2, st3] ->
             IO.inspect st1
             IO.inspect st2
             IO.inspect st3
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
-            Process.send_after(self(), {:update, st2}, 300)
-            Process.send_after(self(), {:update, st3}, 600)
+            Process.send_after(self(), {:update, st2}, 800)
+            Process.send_after(self(), {:update, st3}, 1600)
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
           [st1, st2] ->
             IO.inspect st1
             IO.inspect st2
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
-            Process.send_after(self(), {:update, st2}, 300)
+            Process.send_after(self(), {:update, st2}, 800)
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
           st1 ->
             IO.inspect st1
@@ -43,7 +44,9 @@ defmodule AeroplaneWeb.GamesChannel do
 
     def handle_in("on_click_die", %{}, socket) do
       name = socket.assigns[:name]
+      IO.inspect name
       game = GameServer.on_click_die(name)
+      IO.inspect game
       broadcast!(socket, "update", %{ "game" => Game.client_view(game) })
 
       # game = Game.clickDie(socket.assigns[:game])
@@ -53,7 +56,7 @@ defmodule AeroplaneWeb.GamesChannel do
     end
 
     def handle_info({:update, game}, socket) do
-      socket = assign(socket, :game, game);
+     # socket = assign(socket, :game, game);
       broadcast!(socket, "update", %{ "game" => Game.client_view(game) })
       {:noreply, socket}
     end
