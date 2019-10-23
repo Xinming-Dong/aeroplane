@@ -5,12 +5,18 @@ defmodule AeroplaneWeb.GamesChannel do
     alias Aeroplane.GameServer
 
     def join("games:" <> name, payload, socket) do
+      # IO.puts "payload"
+      # IO.inspect payload
+
       if authorized?(payload) do
         GameServer.start(name)
         game = GameServer.peek(name)
+        game = GameServer.add(name, payload)
+
         BackupAgent.put(name, game)
         socket = socket
         |> assign(:name, name)
+        |> assign(:user, payload)
         {:ok, %{"join" => name, "game" => Game.client_view(game)}, socket}
       else
         {:error, %{reason: "unauthorized"}}
@@ -19,44 +25,34 @@ defmodule AeroplaneWeb.GamesChannel do
 
     def handle_in("on_click_piece", %{"index" => ii}, socket) do
         name = socket.assigns[:name]
-        game = GameServer.on_click_piece(name, ii)
+        user = socket.assigns[:user]
+        game = GameServer.on_click_piece(name, user, ii)
         case game do
           [st1, st2, st3] ->
-            IO.inspect st1
-            IO.inspect st2
-            IO.inspect st3
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
             Process.send_after(self(), {:update, st2}, 800)
             Process.send_after(self(), {:update, st3}, 1600)
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
           [st1, st2] ->
-            IO.inspect st1
-            IO.inspect st2
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
             Process.send_after(self(), {:update, st2}, 800)
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
           st1 ->
-            IO.inspect st1
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1) })
             {:reply, {:ok, %{ "game" => Game.client_view(st1)}}, socket}
         end
     end
 
     def handle_in("on_click_die", %{}, socket) do
+      IO.inspect socket
       name = socket.assigns[:name]
-      IO.inspect name
-      game = GameServer.on_click_die(name)
-      IO.inspect game
+      user = socket.assigns[:user]
+      game = GameServer.on_click_die(name, user)
       broadcast!(socket, "update", %{ "game" => Game.client_view(game) })
-
-      # game = Game.clickDie(socket.assigns[:game])
-      # socket = assign(socket, :game, game)
-      # BackupAgent.put(name, game)
       {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
     end
 
     def handle_info({:update, game}, socket) do
-     # socket = assign(socket, :game, game);
       broadcast!(socket, "update", %{ "game" => Game.client_view(game) })
       {:noreply, socket}
     end
