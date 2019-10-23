@@ -59,6 +59,14 @@ defmodule AeroplaneWeb.GamesChannel do
       {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
     end
 
+    def handel_in("on_click_start", %{}, socket) do
+      name = socket.assigns[:name]
+      user = socket.assigns[:user]
+      game = GameServer.on_click_start(name, user)
+      broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
+      {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
+    end
+
     def handle_info({:update, game}, socket) do
       user = socket.assigns[:user]
       broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
