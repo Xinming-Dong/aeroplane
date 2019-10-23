@@ -4,7 +4,7 @@
     <h1 class="join">Join a Game</h1>
 
     <%= form_for @conn, "/game", fn f-> %>
-      <label class="join">Tavle Name</label>
+      <label class="join">Table Name</label>
       <label> 
         <%=text_input f, :name, [class: "input_name"]%> 
       </label>

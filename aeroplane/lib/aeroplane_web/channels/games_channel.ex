@@ -6,7 +6,7 @@ defmodule AeroplaneWeb.GamesChannel do
 
     def join("games:" <> name, payload, socket) do
       # IO.puts "payload"
-      # IO.inspect payload
+      IO.inspect payload
 
       if authorized?(payload) do
         GameServer.start(name)
@@ -57,7 +57,8 @@ defmodule AeroplaneWeb.GamesChannel do
       {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
     end
 
-    def handel_in("on_click_join", %{}, socket) do
+    def handle_in("on_click_join", %{}, socket) do
+      IO.puts "channel on_click_join"
       name = socket.assigns[:name]
       user = socket.assigns[:user]
       game = GameServer.on_click_join(name, user)
@@ -65,7 +66,8 @@ defmodule AeroplaneWeb.GamesChannel do
       {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
     end
 
-    def handel_in("on_click_start", %{}, socket) do
+    def handle_in("on_click_start", %{}, socket) do
+      IO.puts "channel on_click_start"
       name = socket.assigns[:name]
       user = socket.assigns[:user]
       game = GameServer.on_click_start(name, user)

@@ -106,6 +106,7 @@ class Aeroplane extends React.Component {
   }
 
   on_click_start() {
+    console.log("client click start");
     this.channel.push("on_click_start", {})
                 .receive("ok", this.got_view.bind(this));
   }
@@ -135,7 +136,7 @@ class Aeroplane extends React.Component {
             <Layer>
               <Die number={this.state.die} player={this.state.curr_player} on_click_die={this.on_click_die.bind(this)}/>
               {pieces}
-              <CurrPlayer player={this.state.curr_player} />
+              <CurrPlayer player={this.state.user_name} />
               <JoinButton game_active={this.state.game_active} on_click_join={this.on_click_join.bind(this)}/>
               <StartButton can_start={this.state.can_start} on_click_start={this.on_click_start.bind(this)}/>
             </Layer>
@@ -180,8 +181,8 @@ function JoinButton(params) {
   let {game_active, on_click_join} = params
   let join = <Text text={"Join Game"} fontSize={20} fontFamily={"Comic Sans MS"} padding={10}/>
   if (game_active == 0) {
-    return (<Label x={880} y={500} opacity={0.75}>
-              <Tag onClick={on_click_join} fill={"yellow"} stroke={"black"}/>
+    return (<Label onClick={on_click_join} x={880} y={500} opacity={0.75}>
+              <Tag fill={"yellow"} stroke={"black"}/>
               {join}
             </Label>);
   }
@@ -190,10 +191,10 @@ function JoinButton(params) {
 
 function StartButton(params) {
   let {can_start, on_click_start} = params
-  let start = <Text test={"Start"} fontSize={20} fontFamily={"Comic Sans MS"} padding={10}/>
+  let start = <Text text={"Start"} fontSize={20} fontFamily={"Comic Sans MS"} padding={10}/>
   if (can_start == 1) {
-    return (<Label x={880} y={400} opacity={0.75}>
-              <Tag onClick={on_click_start} fill={yellow} stroke={"black"}/>
+    return (<Label onClick={on_click_start} x={880} y={400} opacity={0.75}>
+              <Tag fill={"yellow"} stroke={"black"}/>
               {start}
             </Label>);
     
