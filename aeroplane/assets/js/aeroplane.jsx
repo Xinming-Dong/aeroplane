@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Stage, Layer, Circle, Image, Text, Label, Tag} from 'react-konva';
+import { Stage, Layer, Circle, Image, Text, Label, Tag, Rect} from 'react-konva';
 import _ from "lodash";
 
 export default function aeroplane_init(root, channel) {
@@ -9,8 +9,8 @@ export default function aeroplane_init(root, channel) {
 
 // w&h: width and height of canvas
 // r: radius of pieces
-let W = 1024;
-let H = 1024;
+let W = 2000;
+let H = 900;
 let R = 20;
 let buttons_clickable = true;
 let last_player = "yellow";
@@ -26,9 +26,14 @@ class Aeroplane extends React.Component {
       die: 0,
       curr_player: "",
 
+      // multiplayer attributes
       game_active: 0,
       can_start: 0,
       user_name: "",
+
+      // chatting room attributes
+      message: ["c: hhhhhh", "b: noooooo", "a: wow"],
+
     };
 
     this.channel
@@ -111,6 +116,27 @@ class Aeroplane extends React.Component {
                 .receive("ok", this.got_view.bind(this));
   }
 
+  submit() {
+    let input = document.getElementById("input_message").value;
+    console.log(input);
+    // this.channel.push("message_submit", {msg: input})
+    //             .receive("ok", this.got_view.bind(this));
+    
+  }
+
+  display_messages() {
+    console.log(this.state.message);
+    let i = this.state.message.length;
+    console.log(i);
+    let msgs = [];
+    for (i = i - 1; i >= 0; i --) {
+      msgs.push(
+        <p key={i}>{this.state.message[i]}</p>
+      );
+    }
+    return msgs;
+  }
+
   render() {
     // pieces
     let pieces = _.map(this.state.pieces_loc, (pp, ii) => {
@@ -136,11 +162,19 @@ class Aeroplane extends React.Component {
             <Layer>
               <Die number={this.state.die} player={this.state.curr_player} on_click_die={this.on_click_die.bind(this)}/>
               {pieces}
-              <CurrPlayer player={this.state.user_name} />
+              <CurrPlayer player={this.state.curr_player} />
               <JoinButton game_active={this.state.game_active} on_click_join={this.on_click_join.bind(this)}/>
               <StartButton can_start={this.state.can_start} on_click_start={this.on_click_start.bind(this)}/>
+              <Rect fill={"#99CCFF"} x={1020} y={0} width={350} height={900}/>
             </Layer>
+            
           </Stage>
+          <div className="chat_messages">
+            <p>Chatting Room</p>
+            <div>{this.display_messages()}</div>
+            <input type="text" id="input_message"/>
+            <button onClick={this.submit.bind(this)}>Send</button>
+          </div>
         </div>
     );
   }
@@ -190,7 +224,7 @@ function JoinButton(params) {
 }
 
 function StartButton(params) {
-  let {can_start, on_click_start} = params
+  let {can_start, on_click_start} = params;
   let start = <Text text={"Start"} fontSize={20} fontFamily={"Comic Sans MS"} padding={10}/>
   if (can_start == 1) {
     return (<Label onClick={on_click_start} x={880} y={400} opacity={0.75}>

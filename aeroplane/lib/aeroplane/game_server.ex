@@ -81,4 +81,14 @@ defmodule Aeroplane.GameServer do
     def on_click_start(name, user) do
         GenServer.call(reg(name), {:on_click_start, name, user})
     end
+
+    def handle_call({:message_submit, name, user, input}, _from, game) do
+        game = Aeroplane.Game.message(game, user, input)
+        Aeroplane.BackupAgent.put(name, game)
+        {:reply, game, game}
+    end
+
+    def message_submit(name, user, input) do
+        GenServer.call(reg(name), {:message_submit, name, user, input})
+    end
 end
