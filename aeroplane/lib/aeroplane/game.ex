@@ -34,8 +34,8 @@ defmodule Aeroplane.Game do
     }
   end
 
-  def message(game, userNamem, msg) do
-    game|>Map.put(:message, [msg | game.message])
+  def message(game, userName, msg) do
+    game|>Map.put(:message, [userName <> ": " <> msg | game.message])
   end
 
 

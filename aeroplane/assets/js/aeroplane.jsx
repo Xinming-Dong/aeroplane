@@ -32,7 +32,7 @@ class Aeroplane extends React.Component {
       user_name: "",
 
       // chatting room attributes
-      message: ["c: hhhhhh", "b: noooooo", "a: wow"],
+      message: [],
 
     };
 
@@ -119,8 +119,8 @@ class Aeroplane extends React.Component {
   submit() {
     let input = document.getElementById("input_message").value;
     console.log(input);
-    // this.channel.push("message_submit", {msg: input})
-    //             .receive("ok", this.got_view.bind(this));
+    this.channel.push("message_submit", {msg: input})
+                .receive("ok", this.got_view.bind(this));
     
   }
 
