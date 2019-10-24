@@ -169,10 +169,9 @@ defmodule Aeroplane.Game do
 
 
 
+
+
   ####################Helper functions####################################
-
-
-
 
   def getColor(i) do
     cond do
@@ -272,8 +271,6 @@ defmodule Aeroplane.Game do
   def moveALittleDistance do
     15
   end
-
-
   ##################clickDie Helper#########################################
 
   #change next Player
@@ -370,7 +367,7 @@ defmodule Aeroplane.Game do
     |>resetMoveable()
     |>changePlayer()
     winner = getWinner(game.pieceLocation)
-    if winner !=  0 do
+    if winner !=  "" do
       game|>Map.put(:winner, winner)
     else
       game|>Map.put(:dieActive, 1)
@@ -390,7 +387,7 @@ defmodule Aeroplane.Game do
       loc[:g]|>Enum.count(fn x -> x == 95 end) == 4->
         "Green"
       true ->
-        0
+        ""
     end
   end
 
