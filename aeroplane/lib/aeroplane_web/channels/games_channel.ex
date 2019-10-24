@@ -84,6 +84,15 @@ defmodule AeroplaneWeb.GamesChannel do
       {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
     end
 
+    def handle_in("on_click_restart", %{}, socket) do
+      IO.puts "channel click restart"
+      name = socket.assigns[:name]
+      user = socket.assigns[:user]
+      game = GameServer.on_click_restart(name, user)
+      broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
+      {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
+    end
+
     def handle_info({:update, game}, socket) do
       user = socket.assigns[:user]
       broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
@@ -95,4 +104,3 @@ defmodule AeroplaneWeb.GamesChannel do
       true
     end
   end
-
