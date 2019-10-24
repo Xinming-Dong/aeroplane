@@ -34,13 +34,18 @@ defmodule Aeroplane.Game do
     }
   end
 
+
+  def restart(game, userName) do
+    if !Enum.member?([0, 1, 2, 3], game.user[userName]) do
+      game
+    else
+      users = game.user
+      new()|>Map.put(:user, users)
+    end
+  end
+
   def message(game, userName, msg) do
-<<<<<<< HEAD
-    msg = userName <> ": " <> msg
-    game|>Map.put(:message, [msg | game.message])
-=======
     game|>Map.put(:message, [userName <> ": " <> msg | game.message])
->>>>>>> 17c27f4ff9b3e758519a4b32d30d340c06b0dc9b
   end
 
 
@@ -161,6 +166,7 @@ defmodule Aeroplane.Game do
       end
     end
   end
+
 
 
   ####################Helper functions####################################
