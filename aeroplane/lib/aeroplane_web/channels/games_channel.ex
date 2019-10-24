@@ -13,7 +13,7 @@ defmodule AeroplaneWeb.GamesChannel do
         game = GameServer.peek(name)
         game = GameServer.add(name, payload)
 
-        BackupAgent.put(name, game)
+        # BackupAgent.put(name, game)
         socket = socket
         |> assign(:name, name)
         |> assign(:user, payload)
@@ -43,7 +43,7 @@ defmodule AeroplaneWeb.GamesChannel do
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1, user) })
             Process.send_after(self(), {:update, st2}, 800)
             {:reply, {:ok, %{ "game" => Game.client_view(st1, user)}}, socket}
-          st1 ->
+          [st1] ->
             broadcast!(socket, "update", %{ "game" => Game.client_view(st1, user) })
             {:reply, {:ok, %{ "game" => Game.client_view(st1, user)}}, socket}
         end
@@ -71,6 +71,15 @@ defmodule AeroplaneWeb.GamesChannel do
       name = socket.assigns[:name]
       user = socket.assigns[:user]
       game = GameServer.on_click_start(name, user)
+      broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
+      {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
+    end
+
+    def handle_in("message_submit", %{"msg" => input}, socket) do
+      IO.puts "channel message submit"
+      name = socket.assigns[:name]
+      user = socket.assigns[:user]
+      game = GameServer.message_submit(name, user, input)
       broadcast!(socket, "update", %{ "game" => Game.client_view(game, user) })
       {:reply, {:ok, %{ "game" => Game.client_view(game, user)}}, socket}
     end
