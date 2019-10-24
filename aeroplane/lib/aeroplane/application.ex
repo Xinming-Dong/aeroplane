@@ -9,9 +9,11 @@ defmodule Aeroplane.Application do
     # List all child processes to be supervised
     children = [
       # Start the endpoint when the application starts
-      AeroplaneWeb.Endpoint
+      AeroplaneWeb.Endpoint,
       # Starts a worker by calling: Aeroplane.Worker.start_link(arg)
       # {Aeroplane.Worker, arg},
+      Aeroplane.GameSup,
+      Aeroplane.BackupAgent,
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

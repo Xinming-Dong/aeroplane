@@ -2,7 +2,7 @@ defmodule AeroplaneWeb.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", AeroplaneWeb.RoomChannel
+  channel "games:*", AeroplaneWeb.GamesChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After

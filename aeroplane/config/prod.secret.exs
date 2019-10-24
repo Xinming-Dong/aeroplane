@@ -24,3 +24,4 @@ config :aeroplane, AeroplaneWeb.Endpoint,
 #
 # Then you can assemble a release by calling `mix release`.
 # See `mix help release` for more information.
+config :aeroplane, AeroplaneWeb.Endpoint, server: true
