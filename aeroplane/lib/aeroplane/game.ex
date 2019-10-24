@@ -7,7 +7,6 @@ defmodule Aeroplane.Game do
                        :y => [0, 1, 2, 3], :g => [15, 16, 17, 18]},
       last2Moved: %{:r => [-1, -1], :b => [-1, -1], :y => [-1, -1], :g =>[-1, -1]},
       last2Roll: %{:r => [-1, -1], :b => [-1, -1], :y => [-1, -1], :g =>[-1, -1]},
-      player: [y: 0, b: 1, r: 2, g: 3],
       currPlayer: :y,
       nextPlayer: 0,
       currDie: 0,
@@ -31,7 +30,18 @@ defmodule Aeroplane.Game do
       can_start: game.canStart,
       user_name: user,
       message: game.message,
+      user_map: joinedUser(game.user)
     }
+  end
+
+
+  def restart(game, userName) do
+    if !Enum.member?([0, 1, 2, 3], game.user[userName]) do
+      game
+    else
+      users = game.user
+      new()|>Map.put(:user, users)|>Map.put(:gameActive, 1)
+    end
   end
 
   def message(game, userName, msg) do
@@ -47,29 +57,33 @@ defmodule Aeroplane.Game do
       id = (game.user|>Enum.filter(fn {_name, id} -> id > 3 end)|>Enum.count()) + 4
       game|>Map.put(:user, game.user|>Map.put(userName, id))
     end
-
   end
 
   #user join the game, if more than 1 player joined, the game can start
   def join(game, userName) do
-    currPlayerCount = game.user|>Enum.filter(fn {_name, id} -> id < 4 end) |>Enum.count()
-    if currPlayerCount == 4 do
+    if Enum.member?([0, 1, 2, 3], game.user[userName]) do
       game
     else
-      game = game|>Map.put(:user, game.user|>Map.put(userName, currPlayerCount))
-      if currPlayerCount >= 1 do
-        game|>Map.put(:canStart, 1)
-      else
+      currPlayerCount = game.user|>Enum.filter(fn {_name, id} -> id < 4 end) |>Enum.count()
+      if currPlayerCount == 4 do
         game
+      else
+        game = game|>Map.put(:user, game.user|>Map.put(userName, currPlayerCount))
+        if currPlayerCount >= 1 do
+          game|>Map.put(:canStart, 1)
+        else
+          game
+        end
       end
     end
   end
 
 
+
   #the first joined player can start the game
   def start(game, user) do
     if game.user[user] == 0 do
-      game|>Map.put(:gameActive, 1)
+      game|>Map.put(:gameActive, 1)|>Map.put(:canStart, 0)
     else
       game
     end
@@ -78,7 +92,7 @@ defmodule Aeroplane.Game do
   #actions after clicked the die
   def clickDie(game, userName) do
     userID = game.user[userName]
-    userColor = game.player|>Enum.find(fn {_k, v} -> v == userID end)|>elem(0)
+    userColor = gamePlayers()|>Enum.find(fn {_k, v} -> v == userID end)|>elem(0)
     if game.gameActive == 0 || userColor != game.currPlayer do
       game
     else
@@ -87,21 +101,21 @@ defmodule Aeroplane.Game do
   end
 
   def clickDieAction(game) do
-    game = if game.dieActive == 0 do
+    if game.dieActive == 0 do
       game
     else
       newDieNum = randomDieNum(game);
-      game
+      game = game
       |>Map.put(:currDie, newDieNum)
       |>handleNextPlayer(newDieNum)
       |>changeMoveablePiece(newDieNum)
       |>changeLastRollList(newDieNum)
-    end
-    if Enum.count(game.moveablePieces) <= 1 do
-      game |>Map.put(:currPlayer, game.nextPlayer)
-      |>Map.put(:dieActive, 1)
-    else
-      game|>Map.put(:dieActive, 0)
+      if Enum.count(game.moveablePieces) <= 1 do
+        game |>Map.put(:currPlayer, game.nextPlayer)
+        |>Map.put(:dieActive, 1)
+      else
+        game|>Map.put(:dieActive, 0)
+      end
     end
   end
 
@@ -111,12 +125,12 @@ defmodule Aeroplane.Game do
   #actions after user clicked a piece
   def clickPiece(game, i, userName) do
     userID = game.user[userName]
-    userColor = game.player|>Enum.find(fn {_k, v} -> v == userID end)|>elem(0)
+    userColor = gamePlayers()|>Enum.find(fn {_k, v} -> v == userID end)|>elem(0)
     if game.gameActive == 0 || userColor != game.currPlayer do
-      game
+      [game]
     else
       iColor = getColor(i)
-      i = i - game.player[iColor] * 4
+      i = i - gamePlayers()[iColor] * 4
       if !moveable(game, i, iColor) do
         [game]
       else
@@ -154,10 +168,18 @@ defmodule Aeroplane.Game do
   end
 
 
+
+
+
   ####################Helper functions####################################
 
+  def gamePlayers do
+    [y: 0, b: 1, r: 2, g: 3]
+  end
 
-
+  def joinedUser(user) do
+    user|> Enum.filter(fn {_name, id} -> id < 4 end)|>Map.new()
+  end
 
   def getColor(i) do
     cond do
@@ -194,68 +216,69 @@ defmodule Aeroplane.Game do
     end
   end
 
-  def pieceLocToCoor(location, coor) do
-    location |>Enum.map(fn {_color, locList} -> locList|>Enum.map(fn x->coor[x] end) end)
-    |>List.flatten()
-  end
-
   # def pieceLocToCoor(location, coor) do
   #   location |>Enum.map(fn {_color, locList} -> locList|>Enum.map(fn x->coor[x] end) end)
-  #   |>Enum.map(fn posList -> handleOverlap(posList) end)|>List.flatten()
+  #   |>List.flatten()
   # end
 
-  # def handleOverlap(list) do
-  #   unique = list|>Enum.uniq()
-  #   if unique|>Enum.count() == 4 do
-  #     list
-  #   else
-  #     dup = list -- unique
-  #     cond do
-  #       dup|>Enum.count() == 1 ->
-  #         dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
-  #         moveALittleBit(list, dupIndex, 2)
-  #       dup|>Enum.count() == 2 ->
-  #         dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
-  #         if dupIndex|>Enum.count() == 3 do
-  #           moveALittleBit(list, dupIndex, 3)
-  #         else
-  #           list = moveALittleBit(list, dupIndex, 2)
-  #           dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(1) end)
-  #           moveAlittleBit(list, dupIndex, 2)
-  #         end
-  #       dup|>Enum.count() == 3 ->
-  #         moveAlittleBit(list, [0,1,2,3], 4)
-  #     end
-  #   end
-  # end
+  def pieceLocToCoor(location, coor) do
+    location = location |>Enum.map(fn {color, locList} -> {color, locList|>Enum.map(fn x->coor[x] end)} end)
+    |>Enum.map(fn {color, posList} -> {color, posList|>handleOverlap()} end)
+    location[:y] ++ location[:b] ++ location[:r] ++ location[:g]
+  end
+
+  def handleOverlap(list) do
+    unique = list|>Enum.uniq()
+    if unique|>Enum.count() == 4 do
+      list
+    else
+      dup = list -- unique
+      cond do
+        dup|>Enum.count() == 1 ->
+          dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
+          moveALittleBit(list, dupIndex, 2)
+        dup|>Enum.count() == 2 ->
+          dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
+          if dupIndex|>Enum.count() == 3 do
+            moveALittleBit(list, dupIndex, 3)
+          else
+            list = moveALittleBit(list, dupIndex, 2)
+            dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(1) end)
+            moveALittleBit(list, dupIndex, 2)
+          end
+        dup|>Enum.count() == 3 ->
+          moveALittleBit(list, [0,1,2,3], 4)
+      end
+    end
+  end
 
 
-  # def moveALittleBit(list, dupIndex, count) when count > 0 do
-  #   i = dupIndex|>Enum.at(count - 1)
-  #   list|>List.replace_at(i, moveALittleHelper(list|>Enum.at(i), count))
-  #   |>moveAlittleBit(list, dupIndex, count - 1)
-  # end
+  def moveALittleBit(list, dupIndex, count) when count > 0 do
+    i = dupIndex|>Enum.at(count - 1)
+    list|>List.replace_at(i, moveALittleHelper(list|>Enum.at(i), count))
+    |>moveALittleBit(dupIndex, count - 1)
+  end
 
-  # def moveALittleBit(list, dupIndex, count) when count == 0 do
-  #   list
-  # end
+  def moveALittleBit(list, _dupIndex, count) when count == 0 do
+    list
+  end
 
-  # def moveALittleHelper(coor, count) do
-  #   cond do
-  #     count == 1 ->
-  #       %{x: coor[:x] - moveALittleDistance, y: coor[:y] - moveALittleDistance}
-  #     count == 2 ->
-  #       %{x: coor[:x] + moveALittleDistance, y: coor[:y] - moveALittleDistance}
-  #     count == 3 ->
-  #       %{x: coor[:x] - moveALittleDistance, y: coor[:y] + moveALittleDistance}
-  #     count == 4 ->
-  #       %{x: coor[:x] + moveALittleDistance, y: coor[:y] + moveALittleDistance}
-  #   end
-  # end
+  def moveALittleHelper(coor, count) do
+    cond do
+      count == 1 ->
+        %{x: coor[:x] - moveALittleDistance(), y: coor[:y] - moveALittleDistance()}
+      count == 2 ->
+        %{x: coor[:x] + moveALittleDistance(), y: coor[:y] - moveALittleDistance()}
+      count == 3 ->
+        %{x: coor[:x] - moveALittleDistance(), y: coor[:y] + moveALittleDistance()}
+      count == 4 ->
+        %{x: coor[:x] + moveALittleDistance(), y: coor[:y] + moveALittleDistance()}
+    end
+  end
 
-  # def moveALittleDistance do
-  #   15
-  # end
+  def moveALittleDistance do
+    15
+  end
   ##################clickDie Helper#########################################
 
   #change next Player
@@ -271,8 +294,8 @@ defmodule Aeroplane.Game do
   # change to next player in player list.
   def switchPlayer(game) do
     playerCount = game.user|>Enum.filter(fn {_name, id} -> id < 4 end)|>Enum.count()
-    next = rem(game.player[game.currPlayer] + 1, playerCount)
-    game.player|>Enum.find(fn {_k, v} -> v == next end)|>elem(0)
+    next = rem(gamePlayers()[game.currPlayer] + 1, playerCount)
+    gamePlayers()|>Enum.find(fn {_k, v} -> v == next end)|>elem(0)
   end
 
 
@@ -291,7 +314,7 @@ defmodule Aeroplane.Game do
 
   #move back given player's given pieces to the player's camp
   def moveBack(game) do
-    campbase = game.player[game.currPlayer] * 5
+    campbase = gamePlayers()[game.currPlayer] * 5
     currLocations = game.pieceLocation[game.currPlayer]
                    |> Enum.with_index()
                    |> Enum.map(fn {pos, pieceID} ->
@@ -335,7 +358,7 @@ defmodule Aeroplane.Game do
 
   # return the ID of all pieces that are not in camp for current player
   def piecesNotInCamp(game) do
-    campStart = game.player[game.currPlayer] * 5
+    campStart = gamePlayers()[game.currPlayer] * 5
     game.pieceLocation[game.currPlayer]|> find_indexes(fn(x) -> x > campStart + 3 end)
   end
 
@@ -346,13 +369,12 @@ defmodule Aeroplane.Game do
   ###############clickPiece Helper#########################################
 
   def afterMovePiece(game, i, iColor) do
-    IO.puts("here")
     game = game
     |>storeLastMove(i, iColor)
     |>resetMoveable()
     |>changePlayer()
     winner = getWinner(game.pieceLocation)
-    if winner !=  0 do
+    if winner !=  "" do
       game|>Map.put(:winner, winner)
     else
       game|>Map.put(:dieActive, 1)
@@ -372,7 +394,7 @@ defmodule Aeroplane.Game do
       loc[:g]|>Enum.count(fn x -> x == 95 end) == 4->
         "Green"
       true ->
-        0
+        ""
     end
   end
 
@@ -399,13 +421,13 @@ defmodule Aeroplane.Game do
     currLocation = game.pieceLocation[color]|>Enum.at(i)
     newLocation = cond do
       game.board[currLocation]|>Enum.at(1) == 0 ->
-        game.player[color] * 5 + 4
+        gamePlayers()[color] * 5 + 4
       game.board[currLocation]|>Enum.at(1) == 1 ->
-        22 + 13 * game.player[color] + game.currDie
+        22 + 13 * gamePlayers()[color] + game.currDie
       game.board[currLocation]|>Enum.at(1) == 2 && game.board[currLocation]|>Enum.at(0) == color->
-        71 + 6 * game.player[color] + game.currDie
+        71 + 6 * gamePlayers()[color] + game.currDie
       game.board[currLocation]|>Enum.at(1) == 4 ->
-        [77 + game.player[color] * 6, currLocation + game.currDie]|>Enum.min()
+        [77 + gamePlayers()[color] * 6, currLocation + game.currDie]|>Enum.min()
       true ->
         moveWithinBoundary(game, color, currLocation)
     end
@@ -530,7 +552,7 @@ defmodule Aeroplane.Game do
 
   def sendHome(game, color, idList, c) when c >= 0 do
     i = idList|>Enum.at(c)
-    game|>updatePieceLocation(color, i, i + game.player[color] * 5)
+    game|>updatePieceLocation(color, i, i + gamePlayers()[color] * 5)
     |>sendHome(color, idList, c - 1)
   end
 
