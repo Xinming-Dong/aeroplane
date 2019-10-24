@@ -17,6 +17,7 @@ defmodule Aeroplane.Game do
       user: %{},
       gameActive: 0,
       canStart: 0,
+      message: [],
      }
   end
 
@@ -29,7 +30,12 @@ defmodule Aeroplane.Game do
       game_active: game.gameActive,
       can_start: game.canStart,
       user_name: user,
+      message: game.message,
     }
+  end
+
+  def message(game, userNamem, msg) do
+    game|>Map.put(:message, [msg | game.message])
   end
 
 
@@ -189,10 +195,67 @@ defmodule Aeroplane.Game do
   end
 
   def pieceLocToCoor(location, coor) do
-    List.flatten([location[:y] | [location[:b] | [location[:r] | location[:g]]]])
-    |>Enum.map(fn x -> coor[x] end)
+    location |>Enum.map(fn {_color, locList} -> locList|>Enum.map(fn x->coor[x] end) end)
+    |>List.flatten()
   end
 
+  # def pieceLocToCoor(location, coor) do
+  #   location |>Enum.map(fn {_color, locList} -> locList|>Enum.map(fn x->coor[x] end) end)
+  #   |>Enum.map(fn posList -> handleOverlap(posList) end)|>List.flatten()
+  # end
+
+  # def handleOverlap(list) do
+  #   unique = list|>Enum.uniq()
+  #   if unique|>Enum.count() == 4 do
+  #     list
+  #   else
+  #     dup = list -- unique
+  #     cond do
+  #       dup|>Enum.count() == 1 ->
+  #         dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
+  #         moveALittleBit(list, dupIndex, 2)
+  #       dup|>Enum.count() == 2 ->
+  #         dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
+  #         if dupIndex|>Enum.count() == 3 do
+  #           moveALittleBit(list, dupIndex, 3)
+  #         else
+  #           list = moveALittleBit(list, dupIndex, 2)
+  #           dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(1) end)
+  #           moveAlittleBit(list, dupIndex, 2)
+  #         end
+  #       dup|>Enum.count() == 3 ->
+  #         moveAlittleBit(list, [0,1,2,3], 4)
+  #     end
+  #   end
+  # end
+
+
+  # def moveALittleBit(list, dupIndex, count) when count > 0 do
+  #   i = dupIndex|>Enum.at(count - 1)
+  #   list|>List.replace_at(i, moveALittleHelper(list|>Enum.at(i), count))
+  #   |>moveAlittleBit(list, dupIndex, count - 1)
+  # end
+
+  # def moveALittleBit(list, dupIndex, count) when count == 0 do
+  #   list
+  # end
+
+  # def moveALittleHelper(coor, count) do
+  #   cond do
+  #     count == 1 ->
+  #       %{x: coor[:x] - moveALittleDistance, y: coor[:y] - moveALittleDistance}
+  #     count == 2 ->
+  #       %{x: coor[:x] + moveALittleDistance, y: coor[:y] - moveALittleDistance}
+  #     count == 3 ->
+  #       %{x: coor[:x] - moveALittleDistance, y: coor[:y] + moveALittleDistance}
+  #     count == 4 ->
+  #       %{x: coor[:x] + moveALittleDistance, y: coor[:y] + moveALittleDistance}
+  #   end
+  # end
+
+  # def moveALittleDistance do
+  #   15
+  # end
   ##################clickDie Helper#########################################
 
   #change next Player
