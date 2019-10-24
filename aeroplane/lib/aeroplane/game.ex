@@ -31,6 +31,7 @@ defmodule Aeroplane.Game do
       can_start: game.canStart,
       user_name: user,
       message: game.message,
+      user_map: joinedUser(game.user)
     }
   end
 
@@ -172,6 +173,10 @@ defmodule Aeroplane.Game do
 
 
   ####################Helper functions####################################
+
+  def joinedUser(user) do
+    user|> Enum.filter(fn {_name, id} -> id < 4 end)|>Map.new()
+  end
 
   def getColor(i) do
     cond do
