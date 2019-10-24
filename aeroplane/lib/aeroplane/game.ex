@@ -34,7 +34,8 @@ defmodule Aeroplane.Game do
     }
   end
 
-  def message(game, userNamem, msg) do
+  def message(game, userName, msg) do
+    msg = userName <> ": " <> msg
     game|>Map.put(:message, [msg | game.message])
   end
 
@@ -47,23 +48,27 @@ defmodule Aeroplane.Game do
       id = (game.user|>Enum.filter(fn {_name, id} -> id > 3 end)|>Enum.count()) + 4
       game|>Map.put(:user, game.user|>Map.put(userName, id))
     end
-
   end
 
   #user join the game, if more than 1 player joined, the game can start
   def join(game, userName) do
-    currPlayerCount = game.user|>Enum.filter(fn {_name, id} -> id < 4 end) |>Enum.count()
-    if currPlayerCount == 4 do
+    if Enum.member?([0, 1, 2, 3], game.user[userName]) do
       game
     else
-      game = game|>Map.put(:user, game.user|>Map.put(userName, currPlayerCount))
-      if currPlayerCount >= 1 do
-        game|>Map.put(:canStart, 1)
-      else
+      currPlayerCount = game.user|>Enum.filter(fn {_name, id} -> id < 4 end) |>Enum.count()
+      if currPlayerCount == 4 do
         game
+      else
+        game = game|>Map.put(:user, game.user|>Map.put(userName, currPlayerCount))
+        if currPlayerCount >= 1 do
+          game|>Map.put(:canStart, 1)
+        else
+          game
+        end
       end
     end
   end
+
 
 
   #the first joined player can start the game
@@ -113,7 +118,7 @@ defmodule Aeroplane.Game do
     userID = game.user[userName]
     userColor = game.player|>Enum.find(fn {_k, v} -> v == userID end)|>elem(0)
     if game.gameActive == 0 || userColor != game.currPlayer do
-      game
+      [game]
     else
       iColor = getColor(i)
       i = i - game.player[iColor] * 4
@@ -194,68 +199,71 @@ defmodule Aeroplane.Game do
     end
   end
 
-  def pieceLocToCoor(location, coor) do
-    location |>Enum.map(fn {_color, locList} -> locList|>Enum.map(fn x->coor[x] end) end)
-    |>List.flatten()
-  end
-
   # def pieceLocToCoor(location, coor) do
   #   location |>Enum.map(fn {_color, locList} -> locList|>Enum.map(fn x->coor[x] end) end)
-  #   |>Enum.map(fn posList -> handleOverlap(posList) end)|>List.flatten()
+  #   |>List.flatten()
   # end
 
-  # def handleOverlap(list) do
-  #   unique = list|>Enum.uniq()
-  #   if unique|>Enum.count() == 4 do
-  #     list
-  #   else
-  #     dup = list -- unique
-  #     cond do
-  #       dup|>Enum.count() == 1 ->
-  #         dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
-  #         moveALittleBit(list, dupIndex, 2)
-  #       dup|>Enum.count() == 2 ->
-  #         dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
-  #         if dupIndex|>Enum.count() == 3 do
-  #           moveALittleBit(list, dupIndex, 3)
-  #         else
-  #           list = moveALittleBit(list, dupIndex, 2)
-  #           dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(1) end)
-  #           moveAlittleBit(list, dupIndex, 2)
-  #         end
-  #       dup|>Enum.count() == 3 ->
-  #         moveAlittleBit(list, [0,1,2,3], 4)
-  #     end
-  #   end
-  # end
+  def pieceLocToCoor(location, coor) do
+    location = location |>Enum.map(fn {color, locList} -> {color, locList|>Enum.map(fn x->coor[x] end)} end)
+    |>Enum.map(fn {color, posList} -> {color, posList|>handleOverlap()} end)
+    location[:y] ++ location[:b] ++ location[:r] ++ location[:g]
+  end
+
+  def handleOverlap(list) do
+    unique = list|>Enum.uniq()
+    if unique|>Enum.count() == 4 do
+      list
+    else
+      dup = list -- unique
+      cond do
+        dup|>Enum.count() == 1 ->
+          dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
+          moveALittleBit(list, dupIndex, 2)
+        dup|>Enum.count() == 2 ->
+          dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(0) end)
+          if dupIndex|>Enum.count() == 3 do
+            moveALittleBit(list, dupIndex, 3)
+          else
+            list = moveALittleBit(list, dupIndex, 2)
+            dupIndex = find_indexes(list, fn(x) -> x == dup|>Enum.at(1) end)
+            moveALittleBit(list, dupIndex, 2)
+          end
+        dup|>Enum.count() == 3 ->
+          moveALittleBit(list, [0,1,2,3], 4)
+      end
+    end
+  end
 
 
-  # def moveALittleBit(list, dupIndex, count) when count > 0 do
-  #   i = dupIndex|>Enum.at(count - 1)
-  #   list|>List.replace_at(i, moveALittleHelper(list|>Enum.at(i), count))
-  #   |>moveAlittleBit(list, dupIndex, count - 1)
-  # end
+  def moveALittleBit(list, dupIndex, count) when count > 0 do
+    i = dupIndex|>Enum.at(count - 1)
+    list|>List.replace_at(i, moveALittleHelper(list|>Enum.at(i), count))
+    |>moveALittleBit(dupIndex, count - 1)
+  end
 
-  # def moveALittleBit(list, dupIndex, count) when count == 0 do
-  #   list
-  # end
+  def moveALittleBit(list, _dupIndex, count) when count == 0 do
+    list
+  end
 
-  # def moveALittleHelper(coor, count) do
-  #   cond do
-  #     count == 1 ->
-  #       %{x: coor[:x] - moveALittleDistance, y: coor[:y] - moveALittleDistance}
-  #     count == 2 ->
-  #       %{x: coor[:x] + moveALittleDistance, y: coor[:y] - moveALittleDistance}
-  #     count == 3 ->
-  #       %{x: coor[:x] - moveALittleDistance, y: coor[:y] + moveALittleDistance}
-  #     count == 4 ->
-  #       %{x: coor[:x] + moveALittleDistance, y: coor[:y] + moveALittleDistance}
-  #   end
-  # end
+  def moveALittleHelper(coor, count) do
+    cond do
+      count == 1 ->
+        %{x: coor[:x] - moveALittleDistance(), y: coor[:y] - moveALittleDistance()}
+      count == 2 ->
+        %{x: coor[:x] + moveALittleDistance(), y: coor[:y] - moveALittleDistance()}
+      count == 3 ->
+        %{x: coor[:x] - moveALittleDistance(), y: coor[:y] + moveALittleDistance()}
+      count == 4 ->
+        %{x: coor[:x] + moveALittleDistance(), y: coor[:y] + moveALittleDistance()}
+    end
+  end
 
-  # def moveALittleDistance do
-  #   15
-  # end
+  def moveALittleDistance do
+    15
+  end
+
+
   ##################clickDie Helper#########################################
 
   #change next Player
