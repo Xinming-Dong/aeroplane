@@ -12,10 +12,12 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 
 # Media Assets
 
-* Chess Board
-  The chess board image is freely licensed and in public domain, download from: (http://www.nipic.com/show/3/76/6121951k079bfa25.html).
+* Chess Board: 
 
-* Die
+  The chess board image is freely licensed and in public domain, download from: [http://www.nipic.com](http://www.nipic.com/show/3/76/6121951k079bfa25.html).
+
+* Die: 
+
   Images of dice are created by game developers.
 
 ## Learn more
