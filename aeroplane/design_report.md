@@ -94,7 +94,7 @@ users can see all the history messages in the text area on the top, and send
 their message by inputting text in the box at the bottom and click send next to
 the box. Not only the player that actually plays the game but also observers can
 send messages to the table’s chat room. Messages will be shown with a format
-“username: message”.
+`username: message`.
 
 
 
@@ -181,7 +181,7 @@ these four elements, and will also be explained in the following sections.
 ####  4.1 Color
 
 There are four colors in the game, which are yellow, blue, red and green. They
-are represented in the server as atom : :y, :b, :r and :g. 
+are represented in the server as atom: `:y`, `:b`, `:r` and `:g`. 
 
 
 #### 4.2 Die
@@ -207,9 +207,9 @@ landing space. Therefore, using a map increases the efficiency of this
 application. 
 
 The keys of this map are the id of the spaces, and values are lists of color and
-type. It means the element in the map is represented as “id => [color, type]”.
+type. It means the element in the map is represented as `id => [color, type]`.
 For example, the top-left space of the yellow camp is defined as space number 0,
-and it is represented as “0 => [:y, 0]” in the board map. 
+and it is represented as `0 => [:y, 0]` in the board map. 
 
 We defined 6 types of the spaces in the game and label them with numerical type
 id 0 - 5:
@@ -247,7 +247,7 @@ spaces in this type and four for each color.
 To locate the pieces in the UI, the server also stores a map of the space id and
 the corresponding x, y coordinate. The keys of the map are ids of the spaces,
 and the values are maps represents the coordinates. For example, space number 0
-are represented as 0 => %{x: 198, y: 198} in the board coordinates map. This map
+are represented as `0 => %{x: 198, y: 198}` in the board coordinates map. This map
 is only be used when sending the client's view to the front end. 
 
 
@@ -259,8 +259,8 @@ game. The locations of the pieces are represented as a map. The keys are the
 Atoms represent the color. The values are a list of 4 integers, indicating the
 located space id for the four pieces of this color. For example, at the
 beginning of the game, the yellow pieces reside in the yellow camp, which has
-space id 0 - 3. Therefore, the 4 yellow pieces are represented as y: [0, 1, 2,
-3] in the map. This structure allows us to easily located the clicked pieces,
+space id 0 - 3. Therefore, the 4 yellow pieces are represented as `y: [0, 1, 2,
+3]` in the map. This structure allows us to easily located the clicked pieces,
 and update its location accordingly. 
 
 
