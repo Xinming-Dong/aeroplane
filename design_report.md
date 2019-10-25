@@ -332,7 +332,7 @@ following elements which are needed in the client view:
 *   Game_active: game active or not(0 or 1). Same as the game state.
 *   Can_start: can start the game or not (0 or 1). Same as the game state.
 *   User_map: map all the users who joined the game (that are users with index 0
-    - 3). Keys are usernames, and values are the user id. 
+    to 3). Keys are usernames, and values are the user id. 
 *   User_name: the current user who is taking action. This allows the server to
     send back the username that is transferred into the server through the
     socket channel. 
