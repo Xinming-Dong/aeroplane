@@ -1,0 +1,43 @@
+
+Web Dev Spring 2018 Project 1 Status
+
+Answer the following questions:
+
+
+1. What are the names of the members of your team?
+Xinming Dong, Weihan Liu
+
+
+2. What's the URL of the github repo with your code for this project?
+https://github.com/Xinming-Dong/aeroplane
+
+
+3. What is the URL(s) that you deployed to?
+http://aeroplane.elephantdong.com/
+
+
+4. Is your app functionality complete? If not, what's missing?
+Yes. 
+
+
+
+5. Is your app properly deployed? If not, what went wrong?
+Yes. 
+
+
+
+6. What parts of the project did each team member work on?
+Xinming: frontend(html/css/js/reactJS), connetion of game actions and game server, deployment, writing report. 
+Weihan: backend server(elixir), connection of game actions and game server, writing report. 
+
+
+7. Are all your third-party assets appropriately licensed and credited?
+This game does not have trade mark, and the picture of the board is an open resource.
+The source of the game board picture is cited in the report.  
+
+
+And here's a list of tasks for grading comments. Just leave this here:
+ - Development
+ - Deployment
+ - Submission
+ - Report

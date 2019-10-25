@@ -40,7 +40,8 @@ defmodule Aeroplane.Game do
       game
     else
       users = game.user
-      new()|>Map.put(:user, users)|>Map.put(:gameActive, 1)
+      msg = game.message
+      new()|>Map.put(:user, users)|>Map.put(:gameActive, 1)|>Map.put(:message, msg)
     end
   end
 
