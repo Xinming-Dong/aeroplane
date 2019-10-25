@@ -1,7 +1,6 @@
 defmodule AeroplaneWeb.GamesChannel do
     use AeroplaneWeb, :channel
     alias Aeroplane.Game
-    alias Aeroplane.BackupAgent
     alias Aeroplane.GameServer
 
     def join("games:" <> name, payload, socket) do
